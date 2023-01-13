@@ -28,3 +28,11 @@ jobs:
     - run: cargo test --verbose -F ratelimiter
     - run: cargo test --verbose -F airtable
     
+    
+    - run: cargo test --verbose -r 
+    - run: cargo test --verbose --no-default-features -r 
+    - run: cargo test --verbose --all-features -r 
+    - run: cargo test --verbose -F fs -r 
+    - run: cargo test --verbose -F json -r 
+    - run: cargo test --verbose -F ratelimiter -r 
+    - run: cargo test --verbose -F airtable -r 
