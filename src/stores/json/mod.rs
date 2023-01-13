@@ -203,7 +203,7 @@ mod test_tree {
 
     use serde_json::{json, Value};
 
-    use crate::{store::StoreEx, wrappers::filter_addresses::FilterAddressesWrapperStore};
+    use crate::{store::StoreEx, wrappers::tree::filter_addresses::FilterAddressesWrapperStore};
 
     use super::paths::*;
     use super::JsonValueStore;

@@ -56,6 +56,7 @@
 //! Check those out:
 //! * Recursive traversing of the trees: [`Location::walk_tree_recursively`](location::Location::walk_tree_recursively)
 //! * Turn any store of Strings into JSON store: [`LocatedJsonStore`](stores::located::json::LocatedJsonStore)
+//! * [`FilterAddressesWrapperStore`](wrappers::filter_addresses::FilterAddressesWrapperStore) -- dynamically filter out addresses in any store
 //!
 //! # Main concepts
 //!

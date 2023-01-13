@@ -39,6 +39,41 @@ impl<E> From<E> for FilterAddressesWrapperError<E> {
 }
 
 /// Wrap this over a store to dynamically filter out addresses.
+///
+#[cfg_attr(not(all(feature = "fs")), doc = "```ignore")]
+#[cfg_attr(all(feature = "fs"), doc = "```")]
+/// use anystore::wrappers::filter_addresses::FilterAddressesWrapperStore;
+/// use anystore::{address::traits::tree::BranchOrLeaf, store::StoreEx, stores::fs::FileSystemStore};
+/// use anystore::wrappers::filter_addresses::FilterAddressesWrapperError;
+///
+/// use futures::StreamExt;
+/// use futures::TryStreamExt;
+/// use std::collections::HashSet;
+///
+/// # tokio_test::block_on(async {
+/// let store = FileSystemStore::here()?;
+/// let store = FilterAddressesWrapperStore::new(store, |s: String| s != "target" && s != ".git");
+///
+/// let root = store.root();
+///
+/// let all_paths = root
+///                    .walk_tree_recursively()
+///                    .inspect(|v| {
+///                        let v = v.as_ref().unwrap();
+///                        println!("{v} - {:?}", v.unit())
+///                    })
+///                    .map_ok(|v| (v.to_string(), v.unit()))
+///                    .try_collect::<HashSet<_>>()
+///                    .await?;
+///
+/// assert!(all_paths.contains(&("src".to_string(), BranchOrLeaf::Branch(()))));
+/// assert!(all_paths.contains(&("src/stores/fs.rs".to_string(), BranchOrLeaf::Leaf(()))));
+/// assert!(!all_paths.contains(&("target".to_string(), BranchOrLeaf::Branch(()))));
+///
+/// println!("{:?}", all_paths.len());
+///
+/// Ok::<(), FilterAddressesWrapperError<_>>(())
+/// # }).unwrap()
 pub struct FilterAddressesWrapperStore<S: Store, K: Clone, F: Fn(K) -> bool> {
     underlying: S,
     filter: Arc<F>,

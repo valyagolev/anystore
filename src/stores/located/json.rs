@@ -80,7 +80,7 @@ type LocatedJsonStoreError = anyhow::Error;
 ///
 ///     assert_eq!(l.get().await?, Some(json!("wow")));
 ///
-///     assert_eq!(fileloc.getv().await?, json!({"sub": {"key": "wow"}}));
+///     assert_eq!(fileloc.get::<String>().await?, Some(serde_json::to_string(&json!({"sub": {"key": "wow"}}))?));
 ///
 ///     tokio::fs::remove_file("test.json").await?;
 ///

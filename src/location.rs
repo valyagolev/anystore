@@ -150,7 +150,7 @@ impl<'a, ListAddr: Address, S: 'a + Store + Addressable<ListAddr>> Location<List
     /// use serde_json::json;
     ///
     /// use anystore::stores::json::*;
-    /// use anystore::wrappers::tree::ignore_keys::*;
+    /// use anystore::wrappers::filter_addresses::*;
     /// use anystore::store::StoreEx;
     ///
     /// # tokio_test::block_on(async {
