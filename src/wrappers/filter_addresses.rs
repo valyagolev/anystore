@@ -38,6 +38,7 @@ impl<E> From<E> for FilterAddressesWrapperError<E> {
     }
 }
 
+/// Wrap this over a store to dynamically filter out addresses.
 pub struct FilterAddressesWrapperStore<S: Store, K: Clone, F: Fn(K) -> bool> {
     underlying: S,
     filter: Arc<F>,
@@ -58,6 +59,10 @@ impl<S: Store, K: Clone, F: Fn(K) -> bool> FilterAddressesWrapperStore<S, K, F>
 where
     S::RootAddress: Into<K>,
 {
+    /// Construct a `FilterAddressesWrapperStore` out of a store and
+    /// a filter of type `Fn(K) -> bool`.
+    ///
+    /// All the addresses you're planning to use must implement `Into<K>`.
     pub fn new(underlying: S, filter: F) -> Self {
         FilterAddressesWrapperStore {
             underlying,
@@ -70,12 +75,12 @@ where
         self.underlying
     }
 
-    pub fn should_ignore_addr<Addr: Address + Into<K>>(&self, addr: &Addr) -> bool {
+    fn should_ignore_addr<Addr: Address + Into<K>>(&self, addr: &Addr) -> bool {
         // todo: avoid this cloning by using lots of refs?
         !(self.filter)(addr.clone().into())
     }
 
-    pub fn check_ignore_addr<Addr: Address + Into<K>>(&self, addr: &Addr) -> StoreResult<(), Self> {
+    fn check_ignore_addr<Addr: Address + Into<K>>(&self, addr: &Addr) -> StoreResult<(), Self> {
         if self.should_ignore_addr(addr) {
             Err(FilterAddressesWrapperError::WriteToIgnoredLocation(
                 format!("{addr:?}"),

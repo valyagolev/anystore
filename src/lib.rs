@@ -145,13 +145,14 @@
 //! Basic stores:
 //! - [`stores::fs::FileSystemStore`] file system as a store
 //!
-//! Located stores:
+//! Wrappers:
 //! - [`stores::located::json::LocatedJsonStore`] -- use this over any `Location` to store JSON in it
+//! - [`wrappers::filter_addresses::FilterAddressesWrapperStore`] -- wrap this over a store to dynamically filter out addresses
 //!
 //! Cloud services:
 //! - [`stores::cloud::airtable::AirtableStore`] -- Airtable
 //!
-//! Also:
+//! Memory:
 //! - [`stores::json::JsonValueStore`] `serde_json::Value` as a store
 //! - [`stores::indexed_vec::IndexedVecStore`] Vector indexed by Id derived from the value
 //!
