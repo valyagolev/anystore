@@ -19,6 +19,8 @@
 //!
 //! It is not indended to be used when you need high performance or reliability.
 //!
+//! **This crate is nightly-only**. It heavily depends on `async_fn_in_trait` feature, which is not stable yet.
+//!
 //! Goals:
 //!
 //! * Provide many reasonable defaults and demand very little inconsequential choices.

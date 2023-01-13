@@ -10,6 +10,8 @@ It is good for when you don't want to learn _yet another API_. (It also might be
 
 It is not indended to be used when you need high performance or reliability.
 
+**This crate is nightly-only**. It heavily depends on `async_fn_in_trait` feature, which is not stable yet.
+
 # Testing
 
 To test the cloud integrations:
