@@ -67,7 +67,8 @@
 //! [`location::Location`] is simply a pair of an address and a store. This is the value you'd most typically pass around,
 //! and it has a bunch of helper methods. You can traverse it further:
 //!
-//! ```no_run
+#![cfg_attr(not(feature = "json"), doc = "```ignore")]
+#![cfg_attr(feature = "json", doc = "```no_run")]
 //! # use anystore::stores::json::*;
 //! # use anystore::location::Location;
 //! # fn testloc(jsonlocation: Location<JsonPath, JsonValueStore>) {
@@ -79,7 +80,8 @@
 //! values you can expect there. `Store`s can define an [`DefaultValue`](address::Addressable::DefaultValue) for the addresses,
 //! which allows you to get immediately the correct default type:
 //!
-//! ```no_run
+#![cfg_attr(not(feature = "json"), doc = "```ignore")]
+#![cfg_attr(feature = "json", doc = "```no_run")]
 //! # use anystore::location::Location;
 //! # use anystore::stores::json::*;
 //! # use anystore::store::*;
@@ -92,7 +94,8 @@
 //! In cases when you need a more refined type than the default, you can use e.g. [`Location::get::<Type>`](location::Location::get), as long as
 //! the address supports that type.
 //!
-//! ```no_run
+#![cfg_attr(not(feature = "json"), doc = "```ignore")]
+#![cfg_attr(feature = "json", doc = "```no_run")]
 //! # use anystore::store::StoreResult;
 //! # use anystore::location::Location;
 //! # use anystore::store::Store;
@@ -106,7 +109,8 @@
 //!
 //! In many cases, you can also use strings to traverse it, which is sometimes convenient but less typesafe.
 //!
-//! ```no_run
+#![cfg_attr(not(feature = "json"), doc = "```ignore")]
+#![cfg_attr(feature = "json", doc = "```no_run")]
 //! # use anystore::stores::json::*;
 //! # use anystore::store::StoreResult;
 //! # use anystore::location::Location;

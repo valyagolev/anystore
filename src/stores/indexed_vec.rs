@@ -84,6 +84,7 @@ impl<
 }
 
 #[cfg(test)]
+#[cfg(feature = "json")]
 mod test {
     use serde_json::json;
 

@@ -277,7 +277,7 @@ where
 // //         value.to_string()
 // //     }
 // // }
-
+#[cfg(feature = "fs")]
 #[cfg(test)]
 mod test_tree {
 

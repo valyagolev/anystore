@@ -95,7 +95,8 @@ impl<V, Addr: Address, S: Store + Addressable<Addr, DefaultValue = V>> Location<
 }
 
 impl<'a, ListAddr: Address, S: 'a + Store + Addressable<ListAddr>> Location<ListAddr, S> {
-    /// ```
+    #![cfg_attr(not(feature = "json"), doc = "```ignore")]
+    #![cfg_attr(feature = "json", doc = "```")]
     /// use std::collections::HashSet;
     /// use futures::TryStreamExt;
     /// use serde_json::json;

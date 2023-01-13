@@ -31,6 +31,7 @@ where
 }
 
 #[cfg(test)]
+#[cfg(feature = "json")]
 mod test {
     use std::collections::HashSet;
 
