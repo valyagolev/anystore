@@ -23,6 +23,7 @@
         "config",
     ]
     edition = "2021"
+    exclude = [".github/*", ".gitignore"]
 
 [features]
     default = ["json"]
