@@ -169,12 +169,12 @@ where
     }
 }
 
-impl<'de, A: Address, S: Addressable<A>> Store for LocatedJsonStore<A, S> {
+impl<A: Address, S: Addressable<A>> Store for LocatedJsonStore<A, S> {
     type Error = LocatedJsonStoreError;
     type RootAddress = JsonPath;
 }
 
-impl<'de, A: Address, S: Addressable<A>> Addressable<JsonPath> for LocatedJsonStore<A, S> {
+impl<A: Address, S: Addressable<A>> Addressable<JsonPath> for LocatedJsonStore<A, S> {
     type DefaultValue = Value;
 }
 
