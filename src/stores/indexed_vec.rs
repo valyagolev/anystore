@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use derive_more::From;
-use parking_lot::RwLock;
 use thiserror::Error;
+use tokio::sync::RwLock;
 
 use crate::{
     address::{traits::AddressableRead, Address, Addressable},
@@ -77,6 +77,7 @@ impl<
         Ok(self
             .vec
             .read()
+            .await
             .iter()
             .find(|v| (self.get_id)(v) == addr.0)
             .cloned())

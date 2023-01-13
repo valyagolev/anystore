@@ -12,10 +12,10 @@ use crate::{
     store::{Store, StoreResult},
 };
 use derive_more::{Display, From};
-use futures::stream;
-use parking_lot::RwLock;
+use futures::{stream, StreamExt};
 use serde_json::Value;
 use thiserror::Error;
+use tokio::sync::RwLock;
 
 pub mod paths;
 pub(crate) mod traverse;
@@ -64,7 +64,7 @@ impl Addressable<JsonPath> for JsonValueStore {
 
 impl AddressableRead<Value, JsonPath> for JsonValueStore {
     async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Value>, Self> {
-        let value = self.value.read();
+        let value = self.value.read().await;
 
         return Ok(get_pathvalue(&value, &addr.0[..])?.cloned());
     }
@@ -76,7 +76,7 @@ impl AddressableWrite<Value, JsonPath> for JsonValueStore {
         addr: &JsonPath,
         value: &Option<Value>,
     ) -> StoreResult<(), JsonValueStore> {
-        let mut cur = self.value.write();
+        let mut cur = self.value.write().await;
         let addr = &addr.0;
 
         return match value {
@@ -128,7 +128,7 @@ impl AddressableWrite<Value, JsonPath> for JsonValueStore {
 
 impl AddressableRead<Existence, JsonPath> for JsonValueStore {
     async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Existence>, Self> {
-        let value = self.value.read();
+        let value = self.value.read().await;
         let val = get_pathvalue(&value, &addr.0[..])?;
         Ok(val.map(|_| Default::default()))
     }
@@ -139,30 +139,34 @@ impl<'a> AddressableList<'a, JsonPath> for JsonValueStore {
 
     type ItemAddress = JsonPath;
 
-    type ListOfAddressesStream =
-        stream::Iter<std::vec::IntoIter<StoreResult<(JsonPathPart, JsonPath), JsonValueStore>>>;
-
     fn list(&self, addr: &JsonPath) -> Self::ListOfAddressesStream {
-        let value = self.value.read();
+        let this = self.clone();
+        let addr = addr.clone();
 
-        let val: StoreResult<_, JsonValueStore> =
-            try { get_pathvalue(&value, &addr.0[..])?.ok_or("Path doesn't exist".to_owned())? };
+        stream::once(async move {
+            let value = this.value.read().await;
 
-        let vec = match val {
-            Ok(Value::Array(arr)) => (0..arr.len())
-                .map(JsonPathPart::Index)
-                .map(|i| Ok((i.clone(), addr.clone().sub(i))))
-                .collect(),
-            Ok(Value::Object(obj)) => obj
-                .keys()
-                .map(|k| JsonPathPart::Key(k.to_owned()))
-                .map(|i| Ok((i.clone(), addr.clone().sub(i))))
-                .collect(),
-            Err(e) => vec![Err(e)],
-            _ => vec![Err(format!("Can't list: {val:?}").into())],
-        };
+            let val: StoreResult<_, JsonValueStore> =
+                try { get_pathvalue(&value, &addr.0[..])?.ok_or("Path doesn't exist".to_owned())? };
 
-        stream::iter(vec.into_iter())
+            let vec = match val {
+                Ok(Value::Array(arr)) => (0..arr.len())
+                    .map(JsonPathPart::Index)
+                    .map(|i| Ok((i.clone(), addr.clone().sub(i))))
+                    .collect(),
+                Ok(Value::Object(obj)) => obj
+                    .keys()
+                    .map(|k| JsonPathPart::Key(k.to_owned()))
+                    .map(|i| Ok((i.clone(), addr.clone().sub(i))))
+                    .collect(),
+                Err(e) => vec![Err(e)],
+                _ => vec![Err(format!("Can't list: {val:?}").into())],
+            };
+
+            stream::iter(vec.into_iter())
+        })
+        .flatten()
+        .boxed_local()
     }
 }
 
@@ -171,7 +175,7 @@ impl<'a> AddressableTree<'a, JsonPath, JsonPath> for JsonValueStore {
         &self,
         addr: JsonPath,
     ) -> StoreResult<BranchOrLeaf<JsonPath, JsonPath>, Self> {
-        let value = self.value.read();
+        let value = self.value.read().await;
         let val = get_pathvalue(&value, &addr.0[..])?.ok_or("Path doesn't exist".to_owned())?;
 
         Ok(match val {
@@ -260,15 +264,15 @@ mod test_tree {
         assert_eq!(some.get().await?, Some(json!("yes")));
 
         some.write(&Some(json!("no"))).await?;
-        println!("{:?}", base_store.value.read());
+        println!("{:?}", base_store.value.read().await);
         assert_eq!(true, some.exists().await?);
 
         some.write(&Some(Value::Null)).await?;
-        println!("{:?}", base_store.value.read());
+        println!("{:?}", base_store.value.read().await);
         assert_eq!(true, some.exists().await?);
 
         some.write(&None).await?;
-        println!("{:?}", base_store.value.read());
+        println!("{:?}", base_store.value.read().await);
         assert_eq!(false, some.exists().await?);
 
         println!(

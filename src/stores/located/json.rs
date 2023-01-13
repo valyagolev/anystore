@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
+use tokio::sync::{RwLock, RwLockReadGuard};
 
 use serde_json::Value;
 
@@ -115,13 +115,11 @@ where
         }
     }
 
-    async fn lock_read_value<'a>(
-        &'a self,
-    ) -> StoreResult<(MappedRwLockReadGuard<'a, ()>, Value), Self>
+    async fn lock_read_value<'a>(&'a self) -> StoreResult<(RwLockReadGuard<'a, ()>, Value), Self>
     where
         S: AddressableRead<String, A>,
     {
-        let loc = self.location.read();
+        let loc = self.location.read().await;
 
         let value = loc
             .get::<String>()
@@ -140,7 +138,7 @@ where
     where
         S: AddressableRead<String, A> + AddressableWrite<String, A>,
     {
-        let loc = self.location.write();
+        let loc = self.location.write().await;
 
         let mut value = loc
             .get::<String>()
