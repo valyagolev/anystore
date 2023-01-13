@@ -115,7 +115,7 @@ where
         }
     }
 
-    async fn lock_read_value<'a>(&'a self) -> StoreResult<(RwLockReadGuard<'a, ()>, Value), Self>
+    async fn lock_read_value(&self) -> StoreResult<(RwLockReadGuard<()>, Value), Self>
     where
         S: AddressableRead<String, A>,
     {
