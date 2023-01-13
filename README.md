@@ -1,5 +1,7 @@
 # anystore
 
+[![](https://img.shields.io/crates/v/anystore)](https://crates.io/crates/anystore) [![](https://img.shields.io/docsrs/anystore)](https://docs.rs/anystore)
+
 `anystore` is a polymorphic, type-safe, composable async framework for specifying API for arbitrary stores
 (including databases and configuration systems). It supports addressing arbitrary type-safe hierarchies of objects.
 
