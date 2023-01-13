@@ -187,7 +187,7 @@ impl<'a> AddressableTree<'a, JsonPath, JsonPath> for JsonValueStore {
 // mb create a "wrapper error" struct...
 // ... or let a store handle this...
 impl From<paths::JsonPathParseError>
-    for crate::wrappers::tree::ignore_keys::FilterAddressesWrapperError<
+    for crate::wrappers::filter_addresses::FilterAddressesWrapperError<
         crate::stores::json::JsonValueStoreError,
     >
 {
@@ -203,7 +203,7 @@ mod test_tree {
 
     use serde_json::{json, Value};
 
-    use crate::{store::StoreEx, wrappers::tree::ignore_keys::FilterAddressesWrapperStore};
+    use crate::{store::StoreEx, wrappers::filter_addresses::FilterAddressesWrapperStore};
 
     use super::paths::*;
     use super::JsonValueStore;
