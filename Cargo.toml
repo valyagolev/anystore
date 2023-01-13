@@ -3,6 +3,7 @@
     description = "Polymorphic, type-safe, composable async API for arbitrary stores"
     homepage = "https://github.com/valyagolev/anystore"
     repository = "https://github.com/valyagolev/anystore"
+    documentation = "https://docs.rs/anystore"
     version = "0.1.0"
     license = "MIT OR Apache-2.0"
     readme = "README.md"
