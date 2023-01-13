@@ -20,15 +20,20 @@
 [features]
     default = ["json"]
     json = ["dep:serde_json", "dep:serde"]
-    ratelimiter = ["dep:tokio"]
+    ratelimiter = [
+        # "dep:tokio"
+    ]
     airtable = [
         "json",
         "ratelimiter",
-        "dep:tokio",
+        # "dep:tokio",
         "dep:reqwest",
         "dep:impl-tools",
     ]
-    fs = ["dep:tokio", "dep:tokio-stream"]
+    fs = [
+        # "dep:tokio",
+        "dep:tokio-stream",
+    ]
 
 [dependencies]
     # todo: remove dependency on anyhow (figure out backtraces)
