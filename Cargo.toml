@@ -1,9 +1,27 @@
 [package]
-    name    = "anystore"
+    name = "anystore"
+    description = "Polymorphic, type-safe, composable async API for arbitrary stores"
+    homepage = "https://github.com/valyagolev/anystore"
+    repository = "https://github.com/valyagolev/anystore"
     version = "0.1.0"
-    edition = "2021"
-
-    # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+    license = "MIT OR Apache-2.0"
+    readme = "README.md"
+    keywords = [
+        "async",
+        "framework",
+        "async",
+        "api",
+        "json",
+        "cloud",
+        "database",
+        "keyvalue",
+    ]
+    categories = [
+        "filesystem",
+        "database-implementations",
+        "database",
+        "config",
+    ]
 
 [features]
     default = ["json"]
