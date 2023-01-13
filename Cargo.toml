@@ -59,7 +59,8 @@
     impl-tools = { version = "0.6", optional = true }
 
     # fs
-    tokio        = { version = "1", features = ["sync", "fs"], optional = true }
+    # TODO: this is not optional because we need RwLockReadGuard::map
+    tokio        = { version = "1", features = ["sync", "fs"] }
     tokio-stream = { version = "0.1", features = ["fs"], optional = true }
 
 
