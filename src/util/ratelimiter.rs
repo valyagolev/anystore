@@ -29,7 +29,7 @@ impl Ratelimiter {
                     *v = (now, 0);
                     return;
                 } else if v.1 < self.count - 1 {
-                    (*v).1 += 1;
+                    v.1 += 1;
                     return;
                 }
 
