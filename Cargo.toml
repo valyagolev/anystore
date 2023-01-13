@@ -6,16 +6,7 @@
     version = "0.1.0"
     license = "MIT OR Apache-2.0"
     readme = "README.md"
-    keywords = [
-        "async",
-        "framework",
-        "async",
-        "api",
-        "json",
-        "cloud",
-        "database",
-        "keyvalue",
-    ]
+    keywords = ["framework", "json", "cloud", "database", "keyvalue"]
     categories = [
         "filesystem",
         "database-implementations",
