@@ -49,6 +49,44 @@ type LocatedJsonStoreError = anyhow::Error;
 //     // ),
 // }
 
+/// Turn any store of Strings into JSON store
+///
+#[cfg_attr(not(all(feature = "json", feature = "fs")), doc = "```ignore")]
+#[cfg_attr(all(feature = "json", feature = "fs"), doc = "```")]
+/// use serde_json::json;
+///
+/// use anystore::stores::located::json::LocatedJsonStore;
+/// use anystore::stores::fs::FileSystemStore;
+///
+/// use anystore::store::StoreEx;
+/// use anystore::address::primitive::Existence;
+///
+///
+/// # tokio_test::block_on(async {
+///     let _ = tokio::fs::remove_file("test.json").await;
+///
+///     let fileloc = FileSystemStore::here()?.path("test.json")?;
+///
+///     assert_eq!(fileloc.get::<Existence>().await?, None);
+///     assert_eq!(fileloc.get::<Existence>().await?, None);
+///
+///     let json_there = LocatedJsonStore::new(fileloc.clone());
+///
+///     let l = json_there.path("sub.key")?;
+///
+///     l.write(&Some(json!("wow"))).await?;
+///
+///     assert_eq!(fileloc.get::<Existence>().await?, Some(Existence));
+///
+///     assert_eq!(l.get().await?, Some(json!("wow")));
+///
+///     assert_eq!(fileloc.getv().await?, json!({"sub": {"key": "wow"}}));
+///
+///     tokio::fs::remove_file("test.json").await?;
+///
+/// #    Ok::<(), anyhow::Error>(())
+/// # }).unwrap()
+/// ```
 #[derive(Clone)]
 pub struct LocatedJsonStore<A: Address, S: Addressable<A>> {
     pub pretty: bool,
@@ -60,6 +98,7 @@ impl<A: Address, S: Addressable<A>> LocatedJsonStore<A, S>
 where
     S::Error: std::error::Error,
 {
+    /// Wrap a store of Strings into a JSON store
     pub fn new(location: Location<A, S>) -> Self {
         LocatedJsonStore {
             location: Arc::new(RwLock::new(location)),
@@ -67,6 +106,8 @@ where
         }
     }
 
+    /// Wrap a store of Strings into a JSON store,
+    /// that formats JSON with pretty print
     pub fn new_pretty(location: Location<A, S>) -> Self {
         LocatedJsonStore {
             location: Arc::new(RwLock::new(location)),
@@ -277,40 +318,40 @@ where
 // //         value.to_string()
 // //     }
 // // }
-#[cfg(feature = "fs")]
-#[cfg(test)]
-mod test_tree {
+// #[cfg(feature = "fs")]
+// #[cfg(test)]
+// mod test_tree {
 
-    use serde_json::json;
+//     use serde_json::json;
 
-    use crate::{address::primitive::Existence, store::StoreEx, stores::fs::FileSystemStore};
+//     use crate::{address::primitive::Existence, store::StoreEx, stores::fs::FileSystemStore};
 
-    use super::LocatedJsonStore;
+//     use super::LocatedJsonStore;
 
-    #[tokio::test]
-    pub async fn test_json_tree() -> Result<(), Box<dyn std::error::Error>> {
-        let _ = tokio::fs::remove_file("test.json").await;
+//     #[tokio::test]
+//     pub async fn test_json_tree() -> Result<(), Box<dyn std::error::Error>> {
+//         let _ = tokio::fs::remove_file("test.json").await;
 
-        let fileloc = FileSystemStore::here()?.path("test.json")?;
+//         let fileloc = FileSystemStore::here()?.path("test.json")?;
 
-        assert_eq!(fileloc.get::<Existence>().await?, None);
-        assert_eq!(fileloc.get::<Existence>().await?, None);
+//         assert_eq!(fileloc.get::<Existence>().await?, None);
+//         assert_eq!(fileloc.get::<Existence>().await?, None);
 
-        let json_there = LocatedJsonStore::new_pretty(fileloc.clone());
+//         let json_there = LocatedJsonStore::new_pretty(fileloc.clone());
 
-        let l = json_there.path("sub.key")?;
+//         let l = json_there.path("sub.key")?;
 
-        l.write(&Some(json!("wow"))).await?;
+//         l.write(&Some(json!("wow"))).await?;
 
-        assert_eq!(fileloc.get::<Existence>().await?, Some(Existence));
+//         assert_eq!(fileloc.get::<Existence>().await?, Some(Existence));
 
-        assert_eq!(l.get().await?, Some(json!("wow")));
+//         assert_eq!(l.get().await?, Some(json!("wow")));
 
-        tokio::fs::remove_file("test.json").await?;
+//         tokio::fs::remove_file("test.json").await?;
 
-        Ok(())
-    }
-}
+//         Ok(())
+//     }
+// }
 // //         let base_store = LocatedJsonStore::new(json!({
 // //                 "wow": {"hello": "yes"},
 // //                 "another": {"seriously": {"throrougly": 7}, "basic": [1,2,3,{"hello": "_why"},{"_why": "ya"}]},

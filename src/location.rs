@@ -21,17 +21,58 @@ use crate::{
 use futures::StreamExt;
 use futures::{stream, Stream};
 
+/// A pair of a store and an address. You can pass this object around,
+/// use it to traverse the store, and get/change values.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Location<Addr: Address, S: Store + Addressable<Addr>> {
-    store: S,
+    pub store: S,
     pub address: Addr,
 }
 
-impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
-    pub fn new(address: Addr, store: S) -> Self {
-        Location { store, address }
+impl<V, Addr: Address, S: Store + Addressable<Addr, DefaultValue = V>> Location<Addr, S> {
+    /// Get a Value of the default type for this address.
+    pub async fn getv(&self) -> StoreResult<Option<V>, S>
+    where
+        S: Addressable<Addr, DefaultValue = V> + AddressableRead<V, Addr>,
+    {
+        self.get().await
     }
 
+    /// Write a Value of the default type for this address.
+    pub async fn writev(&self, v: &Option<V>) -> StoreResult<(), S>
+    where
+        S: Addressable<Addr, DefaultValue = V> + AddressableWrite<V, Addr>,
+    {
+        self.write(v).await
+    }
+}
+
+impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
+    /// Stream sub-addresses from this location.
+    ///
+    /// It try-streams pairs of `(sub, full_address)`, where `sub` is the part
+    /// of the address added to this one to get `full_address`
+    /// (like, filename vs full path to the file).
+    pub fn list(&self) -> S::ListOfAddressesStream
+    where
+        Addr: SubAddress<S::AddedAddress, Output = S::ItemAddress>,
+        S: AddressableList<'a, Addr>,
+    {
+        self.store.list(&self.address)
+    }
+
+    /// Type-safe navigation. Every store defines its own address types.
+    ///
+    #[cfg_attr(not(feature = "json"), doc = "```ignore")]
+    #[cfg_attr(feature = "json", doc = "```no_run")]
+    /// # use anystore::stores::json::*;
+    /// # use anystore::location::Location;
+    /// # fn testloc(jsonlocation: Location<JsonPath, JsonValueStore>) {
+    /// let location = jsonlocation
+    ///                     .sub(JsonPathPart::Key("subkey".to_owned()))
+    ///                     .sub(JsonPathPart::Index(2));
+    /// # }
+    /// ```
     pub fn sub<AR: Address, A2>(self, address: A2) -> Location<AR, S>
     where
         Addr: SubAddress<A2, Output = AR>,
@@ -40,6 +81,17 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
         Location::new(self.address.sub(address), self.store)
     }
 
+    /// String-based navigation. Some stores allow this.
+    ///
+    #[cfg_attr(not(feature = "json"), doc = "```ignore")]
+    #[cfg_attr(feature = "json", doc = "```no_run")]
+    /// # use anystore::stores::json::*;
+    /// # use anystore::store::StoreResult;
+    /// # use anystore::location::Location;
+    /// # fn testloc(jsonlocation: Location<JsonPath, JsonValueStore>) -> StoreResult<(), JsonValueStore> {
+    /// let location = jsonlocation.path("subkey[2]")?.path("deeper.anotherone[12]")?;
+    /// # Ok(()) };
+    /// ```
     pub fn path<A: Address>(self, p: &str) -> StoreResult<Location<A, S>, S>
     where
         S: Addressable<A>,
@@ -49,6 +101,12 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
         Ok(Location::new(self.address.path(p)?, self.store))
     }
 
+    /// Get a Value of a parituclar type from the store, if the store supports that.
+    ///
+    /// Often it's easier to use `location.getv()`, as it will return the default type
+    /// for this kind of location.
+    ///
+    /// `None` means that the value doesn't exist.
     pub async fn get<Value>(&self) -> StoreResult<Option<Value>, S>
     where
         S: AddressableRead<Value, Addr>,
@@ -56,6 +114,12 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
         self.store.read(&self.address).await
     }
 
+    /// Write a Value of a particular type to the store, if the store supports that.
+    ///
+    /// Often it's easier to use `location.writev(value)`, as it will use the default type
+    /// for this kind of location.
+    ///
+    /// `None` means that the value doesn't exist.
     pub async fn write<Value>(&self, value: &Option<Value>) -> StoreResult<(), S>
     where
         S: AddressableWrite<Value, Addr>,
@@ -63,40 +127,24 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
         self.store.write(&self.address, value).await
     }
 
-    pub fn list(&self) -> S::ListOfAddressesStream
-    where
-        Addr: SubAddress<S::AddedAddress, Output = S::ItemAddress>,
-        S: AddressableList<'a, Addr>,
-        // Addr: SubAddress<S::AddedAddress, Output = S::ItemAddress>,
-    {
-        self.store.list(&self.address)
+    /// Typically it's better to use `store.sub(address)`
+    pub fn new(address: Addr, store: S) -> Self {
+        Location { store, address }
     }
 }
 
 impl<Addr: Address, S: Store + AddressableRead<Existence, Addr>> Location<Addr, S> {
+    /// Check existence by the address.
     pub async fn exists(&self) -> StoreResult<bool, S> {
         return Ok(self.get::<Existence>().await?.is_some());
     }
 }
 
-impl<V, Addr: Address, S: Store + Addressable<Addr, DefaultValue = V>> Location<Addr, S> {
-    pub async fn getv(&self) -> StoreResult<Option<V>, S>
-    where
-        S: AddressableRead<V, Addr>,
-    {
-        self.get().await
-    }
-    pub async fn writev(&self, v: &Option<V>) -> StoreResult<(), S>
-    where
-        S: AddressableWrite<V, Addr>,
-    {
-        self.write(v).await
-    }
-}
-
 impl<'a, ListAddr: Address, S: 'a + Store + Addressable<ListAddr>> Location<ListAddr, S> {
-    #![cfg_attr(not(feature = "json"), doc = "```ignore")]
-    #![cfg_attr(feature = "json", doc = "```")]
+    /// Recursively traverse the tree and stream all the addresses.
+    ///
+    #[cfg_attr(not(feature = "json"), doc = "```ignore")]
+    #[cfg_attr(feature = "json", doc = "```")]
     /// use std::collections::HashSet;
     /// use futures::TryStreamExt;
     /// use serde_json::json;
