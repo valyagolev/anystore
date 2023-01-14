@@ -399,13 +399,32 @@ mod test_airtable {
             AirtableBase, AirtableBasesRootAddr, AirtableStore, AirtableTable, FilterByFormula,
         },
     };
-    use futures::StreamExt;
+    use futures::{future, StreamExt, TryStreamExt};
 
     #[tokio::test]
     #[ignore]
     pub async fn test_airtable() -> Result<(), Box<dyn std::error::Error>> {
         let store =
             AirtableStore::new(&std::env::var("AIRTABLE_API_KEY").expect("AIRTABLE_API_KEY"))?;
+
+        // println!("");
+        // println!("");
+        // println!("Will test rate-limit...");
+        // // let mut bases = store.sub(AirtableBasesRootAddr).list();
+
+        // future::join_all((0..100).map(|_| async {
+        //     store
+        //         .sub(AirtableBasesRootAddr)
+        //         .list()
+        //         .try_collect::<Vec<_>>()
+        //         .await
+        //         .unwrap()
+        // }))
+        // .await;
+
+        println!("");
+        println!("");
+        println!("Will test hierarchy...");
 
         let mut bases = store.sub(AirtableBasesRootAddr).list();
         while let Some(b) = bases.next().await {
