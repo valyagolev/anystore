@@ -11,7 +11,9 @@ use thiserror::Error;
 
 use crate::{
     address::{
-        traits::{AddressableInsert, AddressableList, AddressableQuery},
+        traits::{
+            AddressableInsert, AddressableList, AddressableQuery, AddressableRead, AddressableWrite,
+        },
         Address, Addressable, SubAddress,
     },
     store::Store,
@@ -21,7 +23,11 @@ use crate::{
 #[derive(From, Display, Debug, Error)]
 pub enum AirtableStoreError {
     Custom(String),
-    HttpError(reqwest::Error),
+
+    #[display(fmt = "HttpError {_0}: {_1}")]
+    HttpError(reqwest::StatusCode, Value),
+
+    ReqwestError(reqwest::Error),
     JsonError(serde_json::Error),
 }
 
@@ -69,9 +75,17 @@ impl AirtableStore {
             req = req.body(serde_json::to_string(&b)?)
         }
 
-        let val = req.send().await?.text().await?;
+        let resp = req.send().await?;
 
-        Ok(serde_json::from_str(&val)?)
+        let status = resp.status();
+        let val = resp.text().await?;
+        let val = serde_json::from_str(&val)?;
+
+        if status.is_success() {
+            Ok(val)
+        } else {
+            Err(AirtableStoreError::HttpError(status, val))
+        }
     }
 
     fn get_paginated(
@@ -406,6 +420,88 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
     }
 }
 
+impl<
+        V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
+        Any: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
+    > AddressableRead<V, AirtableRecord<Any>> for AirtableStore
+{
+    async fn read(&self, addr: &AirtableRecord<Any>) -> crate::store::StoreResult<Option<V>, Self> {
+        let resp = self
+            .request(
+                Method::GET,
+                &format!(
+                    "https://api.airtable.com/v0/{}/{}/{}",
+                    addr.table
+                        .base
+                        .as_ref()
+                        .ok_or(AirtableStoreError::Custom(
+                            "Table address contains no base address".to_owned()
+                        ))?
+                        .id,
+                    addr.table.id,
+                    addr.id
+                ),
+                Default::default(),
+                None,
+            )
+            .await;
+        match resp {
+            Ok(val) => {
+                let rec = serde_json::from_value(val["fields"].clone())?;
+
+                Ok(Some(rec))
+            }
+            Err(AirtableStoreError::HttpError(http, _))
+                if http.as_u16() == 404 || http.as_u16() == 403 =>
+            {
+                Ok(None)
+            }
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl<
+        V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
+        Any: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
+    > AddressableWrite<V, AirtableRecord<Any>> for AirtableStore
+{
+    async fn write(
+        &self,
+        addr: &AirtableRecord<Any>,
+        value: &Option<V>,
+    ) -> crate::store::StoreResult<(), Self> {
+        let record_url = &format!(
+            "https://api.airtable.com/v0/{}/{}/{}",
+            addr.table
+                .base
+                .as_ref()
+                .ok_or(AirtableStoreError::Custom(
+                    "Table address contains no base address".to_owned()
+                ))?
+                .id,
+            addr.table.id,
+            addr.id
+        );
+
+        match value {
+            Some(value) => {
+                let body = json!({ "fields": value });
+
+                let resp = self
+                    .request(Method::PUT, record_url, Default::default(), Some(body))
+                    .await?;
+            }
+            None => {
+                self.request(Method::DELETE, record_url, Default::default(), None)
+                    .await?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
     AddressableInsert<'a, V, AirtableTable<V>> for AirtableStore
 {
@@ -584,9 +680,27 @@ mod test_airtable {
 
         println!("inserted: {:?}", res);
 
-        // let obj = loc.sub(res[0].0).getv().await?;
+        let obj = res[0].0.clone();
+        let obj2 = loc.clone().sub(obj.clone()).getv().await?;
 
-        // println!("v: {:?}", res);
+        println!("v2: {obj2:?}");
+
+        let mut mp = obj.value.clone().unwrap();
+        mp.insert("c".to_owned(), "test777".to_owned());
+
+        loc.clone().sub(obj.clone()).write(&Some(mp)).await?;
+        let obj3 = loc.clone().sub(obj.clone()).getv().await?;
+
+        println!("v3: {obj3:?}");
+        assert_eq!(obj3.unwrap()["c"], "test777");
+        println!("1");
+
+        loc.clone().sub(obj.clone()).writev(&None).await?;
+        println!("2");
+        let obj4 = loc.clone().sub(obj.clone()).getv().await?;
+        println!("3");
+
+        assert_eq!(obj4, None);
 
         Ok(())
         // Err(AirtableStoreError::Custom("lol".to_owned()))?
