@@ -103,7 +103,7 @@ impl AirtableStore {
 
                 let bases = resp
                     .get(&object_key)
-                    .ok_or(format!("No {object_key} in resp"))?
+                    .ok_or(format!("No {object_key} in resp: {resp}"))?
                     .as_array()
                     .ok_or("Bad obj list type")?
                     .iter()
