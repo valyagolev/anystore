@@ -28,5 +28,9 @@ pub trait AddressableInsert<
     ListAddr: Address + SubAddress<Self::AddedAddress, Output = Self::ItemAddress>,
 >: AddressableList<'a, ListAddr>
 {
+    /// Inserts a list, returning the addresses of the items.
+    ///
+    /// Typically you want to use `.try_collect::<Vec<_>>().await?` on the returned
+    /// value, to make sure it's all have been processed.
     fn insert(&self, addr: &ListAddr, items: Vec<Value>) -> Self::ListOfAddressesStream;
 }
