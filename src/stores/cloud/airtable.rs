@@ -469,7 +469,7 @@ impl<
         Any: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
     > AddressableSet<V, AirtableRecord<Any>> for AirtableStore
 {
-    async fn write(
+    async fn set_addr(
         &self,
         addr: &AirtableRecord<Any>,
         value: &Option<V>,
@@ -698,7 +698,7 @@ mod test_airtable {
         assert_eq!(obj3.unwrap()["c"], "test777");
         println!("1");
 
-        loc.clone().sub(obj.clone()).writev(&None).await?;
+        loc.clone().sub(obj.clone()).setv(&None).await?;
         println!("2");
         let obj4 = loc.clone().sub(obj.clone()).getv().await?;
         println!("3");

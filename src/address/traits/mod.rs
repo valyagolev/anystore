@@ -17,5 +17,5 @@ pub trait AddressableGet<Value, A: Address>: Addressable<A> {
 }
 
 pub trait AddressableSet<Value, A: Address>: Addressable<A> {
-    async fn write(&self, addr: &A, value: &Option<Value>) -> StoreResult<(), Self>;
+    async fn set_addr(&self, addr: &A, value: &Option<Value>) -> StoreResult<(), Self>;
 }

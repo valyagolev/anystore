@@ -39,7 +39,7 @@ impl<V, Addr: Address, S: Store + Addressable<Addr, DefaultValue = V>> Location<
     }
 
     /// Write a Value of the default type for this address.
-    pub async fn writev(&self, v: &Option<V>) -> StoreResult<(), S>
+    pub async fn setv(&self, v: &Option<V>) -> StoreResult<(), S>
     where
         S: Addressable<Addr, DefaultValue = V> + AddressableSet<V, Addr>,
     {
@@ -116,7 +116,7 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
 
     /// Write a Value of a particular type to the store, if the store supports that.
     ///
-    /// Often it's easier to use `location.writev(value)`, as it will use the default type
+    /// Often it's easier to use `location.setv(value)`, as it will use the default type
     /// for this kind of location.
     ///
     /// `None` means that the value doesn't exist.
@@ -124,7 +124,7 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
     where
         S: AddressableSet<Value, Addr>,
     {
-        self.store.write(&self.address, value).await
+        self.store.set_addr(&self.address, value).await
     }
 
     /// Inserts a list, returning the addresses of the items.

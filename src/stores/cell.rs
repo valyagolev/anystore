@@ -44,7 +44,7 @@ impl<V: Clone> AddressableGet<V, UniqueRootAddress> for MemoryCellStore<V> {
 }
 
 impl<V: Clone> AddressableSet<V, UniqueRootAddress> for MemoryCellStore<V> {
-    async fn write(
+    async fn set_addr(
         &self,
         _address: &UniqueRootAddress,
         value: &Option<V>,

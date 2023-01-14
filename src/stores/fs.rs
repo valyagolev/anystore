@@ -164,7 +164,7 @@ impl AddressableGet<String, RelativePath> for FileSystemStore {
 }
 
 impl AddressableSet<String, RelativePath> for FileSystemStore {
-    async fn write(&self, addr: &RelativePath, value: &Option<String>) -> StoreResult<(), Self> {
+    async fn set_addr(&self, addr: &RelativePath, value: &Option<String>) -> StoreResult<(), Self> {
         let path = self.get_complete_path(addr.clone());
 
         // todo: create dirs?

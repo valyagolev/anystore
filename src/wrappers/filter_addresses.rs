@@ -158,10 +158,10 @@ where
     S::RootAddress: Into<K>,
     A: Into<K>,
 {
-    async fn write(&self, addr: &A, value: &Option<V>) -> StoreResult<(), Self> {
+    async fn set_addr(&self, addr: &A, value: &Option<V>) -> StoreResult<(), Self> {
         self.check_ignore_addr(addr)?;
 
-        Ok(self.underlying.write(addr, value).await?)
+        Ok(self.underlying.set_addr(addr, value).await?)
     }
 }
 

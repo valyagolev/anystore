@@ -198,7 +198,7 @@ impl<A: Address, S: AddressableGet<String, A> + AddressableSet<String, A>>
 where
     <S as Store>::Error: std::error::Error,
 {
-    async fn write(&self, addr: &JsonPath, value: &Option<Value>) -> StoreResult<(), Self> {
+    async fn set_addr(&self, addr: &JsonPath, value: &Option<Value>) -> StoreResult<(), Self> {
         self.change_value(|cur| {
             let addr = &addr.0;
 
