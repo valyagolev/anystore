@@ -169,7 +169,7 @@ impl<'a, ListAddr: Address, S: 'a + Store + Addressable<ListAddr>> Location<List
     ///     "_ignore": {"haha": {"_yes": 3}}
     /// });
     ///
-    /// let store = FilterAddressesWrapperStore::new(JsonValueStore::new(val), |s: JsonPath| {
+    /// let store = FilterAddressesWrapperStore::new(json_value_store(val)?, |s: JsonPath| {
     ///     s.last()
     ///         .map(|s| !s.to_key().starts_with("_"))
     ///         .unwrap_or(true)

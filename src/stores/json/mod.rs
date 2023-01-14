@@ -157,9 +157,10 @@ impl From<JsonPathParseError> for FilterAddressesWrapperError<anyhow::Error> {
     }
 }
 
-pub fn json_value_store(
-    val: Value,
-) -> serde_json::Result<LocatedJsonStore<UniqueRootAddress, MemoryCellStore<String>>> {
+pub type JsonValueStore = LocatedJsonStore<UniqueRootAddress, MemoryCellStore<String>>;
+pub type JsonValueStoreError = <JsonValueStore as Store>::Error;
+
+pub fn json_value_store(val: Value) -> Result<JsonValueStore, JsonValueStoreError> {
     let cell_store = MemoryCellStore::new(Some(serde_json::to_string(&val)?));
 
     Ok(LocatedJsonStore::new(cell_store.root()))

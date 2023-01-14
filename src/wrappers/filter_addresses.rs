@@ -43,7 +43,7 @@ impl<E> From<E> for FilterAddressesWrapperError<E> {
 #[cfg_attr(not(all(feature = "fs")), doc = "```ignore")]
 #[cfg_attr(all(feature = "fs"), doc = "```")]
 /// use anystore::wrappers::filter_addresses::FilterAddressesWrapperStore;
-/// use anystore::{address::traits::tree::BranchOrLeaf, store::StoreEx, stores::fs::FileSystemStore};
+/// use anystore::{address::traits::BranchOrLeaf, store::StoreEx, stores::fs::FileSystemStore};
 /// use anystore::wrappers::filter_addresses::FilterAddressesWrapperError;
 ///
 /// use futures::StreamExt;
