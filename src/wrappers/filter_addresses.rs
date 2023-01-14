@@ -16,7 +16,6 @@ use thiserror::Error;
 
 use crate::{
     address::{
-        primitive::Existence,
         traits::{
             AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
         },

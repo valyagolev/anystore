@@ -1,27 +1,15 @@
-use std::sync::Arc;
-
 use crate::{
-    address::{
-        primitive::{Existence, UniqueRootAddress},
-        traits::{
-            AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
-        },
-        Addressable, SubAddress,
-    },
-    store::{Store, StoreEx, StoreResult},
+    address::primitive::UniqueRootAddress,
+    store::{Store, StoreEx},
     wrappers::filter_addresses::FilterAddressesWrapperError,
 };
-use derive_more::{Display, From};
-use futures::{stream, StreamExt};
+
 use serde_json::Value;
-use thiserror::Error;
-use tokio::sync::RwLock;
 
 pub mod paths;
 pub(crate) mod traverse;
 
 pub use paths::*;
-use traverse::*;
 
 use super::{cell::MemoryCellStore, located::json::LocatedJsonStore};
 
