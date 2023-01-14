@@ -12,7 +12,7 @@ use thiserror::Error;
 use crate::{
     address::{
         traits::{
-            AddressableInsert, AddressableList, AddressableQuery, AddressableRead, AddressableWrite,
+            AddressableGet, AddressableInsert, AddressableList, AddressableQuery, AddressableSet,
         },
         Address, Addressable, SubAddress,
     },
@@ -423,7 +423,7 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
 impl<
         V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
         Any: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
-    > AddressableRead<V, AirtableRecord<Any>> for AirtableStore
+    > AddressableGet<V, AirtableRecord<Any>> for AirtableStore
 {
     async fn read(&self, addr: &AirtableRecord<Any>) -> crate::store::StoreResult<Option<V>, Self> {
         let resp = self
@@ -464,7 +464,7 @@ impl<
 impl<
         V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
         Any: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
-    > AddressableWrite<V, AirtableRecord<Any>> for AirtableStore
+    > AddressableSet<V, AirtableRecord<Any>> for AirtableStore
 {
     async fn write(
         &self,

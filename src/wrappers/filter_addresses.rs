@@ -16,9 +16,7 @@ use thiserror::Error;
 
 use crate::{
     address::{
-        traits::{
-            AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
-        },
+        traits::{AddressableGet, AddressableList, AddressableSet, AddressableTree, BranchOrLeaf},
         Address, Addressable, SubAddress,
     },
     store::{Store, StoreResult},
@@ -140,7 +138,7 @@ where
 {
     type DefaultValue = S::DefaultValue;
 }
-impl<V, A: Address, S: AddressableRead<V, A>, K: Clone, F: Fn(K) -> bool> AddressableRead<V, A>
+impl<V, A: Address, S: AddressableGet<V, A>, K: Clone, F: Fn(K) -> bool> AddressableGet<V, A>
     for FilterAddressesWrapperStore<S, K, F>
 where
     S::RootAddress: Into<K>,
@@ -154,7 +152,7 @@ where
         }
     }
 }
-impl<V, A: Address, S: AddressableWrite<V, A>, K: Clone, F: Fn(K) -> bool> AddressableWrite<V, A>
+impl<V, A: Address, S: AddressableSet<V, A>, K: Clone, F: Fn(K) -> bool> AddressableSet<V, A>
     for FilterAddressesWrapperStore<S, K, F>
 where
     S::RootAddress: Into<K>,
@@ -219,7 +217,7 @@ impl<
     }
 }
 
-// impl<S: Store, A: Address, S: AddressableRead<Existence, A>, K: Clone, F: Fn(K) -> bool> AddressableRead<Existence, A>
+// impl<S: Store, A: Address, S: AddressableGet<Existence, A>, K: Clone, F: Fn(K) -> bool> AddressableGet<Existence, A>
 //     for FilterAddressesWrapperStore<S, K, F>
 // {
 // }

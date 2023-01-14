@@ -87,7 +87,7 @@
 //! # use anystore::stores::json::*;
 //! # use anystore::store::*;
 //! # use anystore::address::traits::*;
-//! # async fn test<V, S: Store + Addressable<JsonPath, DefaultValue=V> + AddressableRead<V, JsonPath>>(location: Location<JsonPath, S>) -> StoreResult<(), S> {
+//! # async fn test<V, S: Store + Addressable<JsonPath, DefaultValue=V> + AddressableGet<V, JsonPath>>(location: Location<JsonPath, S>) -> StoreResult<(), S> {
 //! let val = location.getv().await?;
 //! # Ok(()) };
 //! ```
@@ -103,7 +103,7 @@
 //! # use anystore::address::traits::*;
 //! # use anystore::stores::json::*;
 //! # type Value = ();
-//! # async fn test<S: Store + AddressableRead<Value, JsonPath>>(location: Location<JsonPath, S>) -> StoreResult<(), S> {
+//! # async fn test<S: Store + AddressableGet<Value, JsonPath>>(location: Location<JsonPath, S>) -> StoreResult<(), S> {
 //! let val = location.get::<Value>().await?;
 //! # Ok(()) };
 //! ```
@@ -126,8 +126,8 @@
 //! a piece of content. A storage system can support several types as [Addresses][`address::Address`]: e.g.
 //! pointers to specific databases, tables, rows, cells, or even sub-values inside cells.
 //!
-//! If a system understands a particular address, it implements [traits][`address::traits`] like [`address::traits::AddressableRead`].
-//! `address::traits::AddressableRead<SomeType, SomeAddr>` means that `SomeAddr` can be used to read a value of `SomeType`.
+//! If a system understands a particular address, it implements [traits][`address::traits`] like [`address::traits::AddressableGet`].
+//! `address::traits::AddressableGet<SomeType, SomeAddr>` means that `SomeAddr` can be used to read a value of `SomeType`.
 //! Often there's a bunch of `SomeType`s that is useable with an address, including special values
 //! like `address::primitive::Existence` which is simply used to check whether something exists at that address.
 //!

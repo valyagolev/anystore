@@ -11,8 +11,8 @@ use crate::{
     address::{
         primitive::Existence,
         traits::{
-            AddressableInsert, AddressableList, AddressableQuery, AddressableRead, AddressableTree,
-            AddressableWrite, BranchOrLeaf,
+            AddressableGet, AddressableInsert, AddressableList, AddressableQuery, AddressableSet,
+            AddressableTree, BranchOrLeaf,
         },
         Address, Addressable, PathAddress, SubAddress,
     },
@@ -33,7 +33,7 @@ impl<V, Addr: Address, S: Store + Addressable<Addr, DefaultValue = V>> Location<
     /// Get a Value of the default type for this address.
     pub async fn getv(&self) -> StoreResult<Option<V>, S>
     where
-        S: Addressable<Addr, DefaultValue = V> + AddressableRead<V, Addr>,
+        S: Addressable<Addr, DefaultValue = V> + AddressableGet<V, Addr>,
     {
         self.get().await
     }
@@ -41,7 +41,7 @@ impl<V, Addr: Address, S: Store + Addressable<Addr, DefaultValue = V>> Location<
     /// Write a Value of the default type for this address.
     pub async fn writev(&self, v: &Option<V>) -> StoreResult<(), S>
     where
-        S: Addressable<Addr, DefaultValue = V> + AddressableWrite<V, Addr>,
+        S: Addressable<Addr, DefaultValue = V> + AddressableSet<V, Addr>,
     {
         self.write(v).await
     }
@@ -109,7 +109,7 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
     /// `None` means that the value doesn't exist.
     pub async fn get<Value>(&self) -> StoreResult<Option<Value>, S>
     where
-        S: AddressableRead<Value, Addr>,
+        S: AddressableGet<Value, Addr>,
     {
         self.store.read(&self.address).await
     }
@@ -122,7 +122,7 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
     /// `None` means that the value doesn't exist.
     pub async fn write<Value>(&self, value: &Option<Value>) -> StoreResult<(), S>
     where
-        S: AddressableWrite<Value, Addr>,
+        S: AddressableSet<Value, Addr>,
     {
         self.store.write(&self.address, value).await
     }
@@ -153,7 +153,7 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
     }
 }
 
-impl<Addr: Address, S: Store + AddressableRead<Existence, Addr>> Location<Addr, S> {
+impl<Addr: Address, S: Store + AddressableGet<Existence, Addr>> Location<Addr, S> {
     /// Check existence by the address.
     pub async fn exists(&self) -> StoreResult<bool, S> {
         return Ok(self.get::<Existence>().await?.is_some());

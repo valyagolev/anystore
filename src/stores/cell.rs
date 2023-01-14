@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 use crate::{
     address::{
         primitive::UniqueRootAddress,
-        traits::{AddressableRead, AddressableWrite},
+        traits::{AddressableGet, AddressableSet},
         Addressable,
     },
     store::Store,
@@ -36,14 +36,14 @@ impl<V: Clone> Addressable<UniqueRootAddress> for MemoryCellStore<V> {
     type DefaultValue = V;
 }
 
-impl<V: Clone> AddressableRead<V, UniqueRootAddress> for MemoryCellStore<V> {
+impl<V: Clone> AddressableGet<V, UniqueRootAddress> for MemoryCellStore<V> {
     async fn read(&self, _address: &UniqueRootAddress) -> Result<Option<V>, Self::Error> {
         let value = self.value.read().await.clone();
         Ok(value)
     }
 }
 
-impl<V: Clone> AddressableWrite<V, UniqueRootAddress> for MemoryCellStore<V> {
+impl<V: Clone> AddressableSet<V, UniqueRootAddress> for MemoryCellStore<V> {
     async fn write(
         &self,
         _address: &UniqueRootAddress,

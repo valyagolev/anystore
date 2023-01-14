@@ -14,9 +14,7 @@ use tokio::fs::DirEntry;
 use crate::{
     address::{
         primitive::Existence,
-        traits::{
-            AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
-        },
+        traits::{AddressableGet, AddressableList, AddressableSet, AddressableTree, BranchOrLeaf},
         Address, Addressable, PathAddress, SubAddress,
     },
     store::{Store, StoreResult},
@@ -153,7 +151,7 @@ impl Addressable<RelativePath> for FileSystemStore {
     type DefaultValue = FileOrDir;
 }
 
-impl AddressableRead<String, RelativePath> for FileSystemStore {
+impl AddressableGet<String, RelativePath> for FileSystemStore {
     async fn read(&self, addr: &RelativePath) -> StoreResult<Option<String>, Self> {
         match tokio::fs::read(self.get_complete_path(addr.clone())).await {
             Ok(fil) => Ok(Some(String::from_utf8(fil)?)),
@@ -165,7 +163,7 @@ impl AddressableRead<String, RelativePath> for FileSystemStore {
     }
 }
 
-impl AddressableWrite<String, RelativePath> for FileSystemStore {
+impl AddressableSet<String, RelativePath> for FileSystemStore {
     async fn write(&self, addr: &RelativePath, value: &Option<String>) -> StoreResult<(), Self> {
         let path = self.get_complete_path(addr.clone());
 
@@ -178,7 +176,7 @@ impl AddressableWrite<String, RelativePath> for FileSystemStore {
     }
 }
 
-impl AddressableRead<Existence, RelativePath> for FileSystemStore {
+impl AddressableGet<Existence, RelativePath> for FileSystemStore {
     async fn read(&self, addr: &RelativePath) -> StoreResult<Option<Existence>, Self> {
         let m = tokio::fs::metadata(self.get_complete_path(addr.clone())).await;
 

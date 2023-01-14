@@ -9,7 +9,7 @@ use crate::{
     address::{
         primitive::Existence,
         traits::{
-            AddressableInsert, AddressableList, AddressableRead, AddressableTree, AddressableWrite,
+            AddressableGet, AddressableInsert, AddressableList, AddressableSet, AddressableTree,
             BranchOrLeaf,
         },
         Address, Addressable, SubAddress,
@@ -122,7 +122,7 @@ where
 
     async fn lock_read_value(&self) -> StoreResult<(RwLockReadGuard<()>, Value), Self>
     where
-        S: AddressableRead<String, A>,
+        S: AddressableGet<String, A>,
     {
         let loc = self.location.read().await;
 
@@ -141,7 +141,7 @@ where
 
     async fn change_value<R, F: FnOnce(&mut Value) -> R>(&self, mutator: F) -> StoreResult<R, Self>
     where
-        S: AddressableRead<String, A> + AddressableWrite<String, A>,
+        S: AddressableGet<String, A> + AddressableSet<String, A>,
     {
         let loc = self.location.write().await;
 
@@ -179,7 +179,7 @@ impl<A: Address, S: Addressable<A>> Addressable<JsonPath> for LocatedJsonStore<A
     type DefaultValue = Value;
 }
 
-impl<A: Address, S: AddressableRead<String, A>> AddressableRead<Value, JsonPath>
+impl<A: Address, S: AddressableGet<String, A>> AddressableGet<Value, JsonPath>
     for LocatedJsonStore<A, S>
 where
     <S as Store>::Error: std::error::Error,
@@ -193,8 +193,8 @@ where
     }
 }
 
-impl<A: Address, S: AddressableRead<String, A> + AddressableWrite<String, A>>
-    AddressableWrite<Value, JsonPath> for LocatedJsonStore<A, S>
+impl<A: Address, S: AddressableGet<String, A> + AddressableSet<String, A>>
+    AddressableSet<Value, JsonPath> for LocatedJsonStore<A, S>
 where
     <S as Store>::Error: std::error::Error,
 {
@@ -252,20 +252,20 @@ where
     }
 }
 
-impl<A: Address, S: AddressableRead<String, A>> AddressableRead<Existence, JsonPath>
+impl<A: Address, S: AddressableGet<String, A>> AddressableGet<Existence, JsonPath>
     for LocatedJsonStore<A, S>
 where
     <S as Store>::Error: std::error::Error,
 {
     async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Existence>, Self> {
         let v: Option<Value> =
-            <LocatedJsonStore<A, S> as AddressableRead<Value, JsonPath>>::read(self, addr).await?;
+            <LocatedJsonStore<A, S> as AddressableGet<Value, JsonPath>>::read(self, addr).await?;
 
         Ok(v.map(|_| Existence))
     }
 }
 
-impl<'a, A: Address, S: 'a + AddressableRead<String, A>> AddressableList<'a, JsonPath>
+impl<'a, A: Address, S: 'a + AddressableGet<String, A>> AddressableList<'a, JsonPath>
     for LocatedJsonStore<A, S>
 where
     S::Error: std::error::Error,
@@ -305,7 +305,7 @@ where
     }
 }
 
-impl<'a, A: Address, S: 'a + AddressableRead<String, A>> AddressableTree<'a, JsonPath, JsonPath>
+impl<'a, A: Address, S: 'a + AddressableGet<String, A>> AddressableTree<'a, JsonPath, JsonPath>
     for LocatedJsonStore<A, S>
 where
     S::Error: std::error::Error,
@@ -326,7 +326,7 @@ where
     }
 }
 
-impl<'a, A: Address, S: 'a + AddressableRead<String, A> + AddressableWrite<String, A>>
+impl<'a, A: Address, S: 'a + AddressableGet<String, A> + AddressableSet<String, A>>
     AddressableInsert<'a, Value, JsonPath> for LocatedJsonStore<A, S>
 where
     S::Error: std::error::Error,

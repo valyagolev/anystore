@@ -5,7 +5,7 @@ use thiserror::Error;
 use tokio::sync::RwLock;
 
 use crate::{
-    address::{traits::AddressableRead, Address, Addressable},
+    address::{traits::AddressableGet, Address, Addressable},
     store::Store,
 };
 
@@ -71,7 +71,7 @@ impl<
         V: Clone,
         IdType: ToString + PartialEq + Eq + std::fmt::Debug + Clone + 'static,
         F: Fn(&V) -> IdType,
-    > AddressableRead<V, Id<IdType>> for Arc<IndexedVecStore<V, IdType, F>>
+    > AddressableGet<V, Id<IdType>> for Arc<IndexedVecStore<V, IdType, F>>
 {
     async fn read(&self, addr: &Id<IdType>) -> crate::store::StoreResult<Option<V>, Self> {
         Ok(self
