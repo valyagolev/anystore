@@ -492,7 +492,7 @@ impl<
                 let body = json!({ "fields": value });
 
                 let _resp = self
-                    .request(Method::PUT, record_url, Default::default(), Some(body))
+                    .request(Method::PATCH, record_url, Default::default(), Some(body))
                     .await?;
             }
             None => {
