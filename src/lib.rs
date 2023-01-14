@@ -60,20 +60,6 @@
 //!
 //! # Main concepts
 //!
-//! ## Address
-//!
-//! A storage system is defined around the concept of [`address::Address`]. An address uniquely identifies
-//! a piece of content. A storage system can support several types as [Addresses][`address::Address`]: e.g.
-//! pointers to specific databases, tables, rows, cells, or even sub-values inside cells.
-//!
-//! If a system understands a particular address, it implements [traits][`address::traits`] like [`address::traits::AddressableRead`].
-//! `address::traits::AddressableRead<SomeType, SomeAddr>` means that `SomeAddr` can be used to read a value of `SomeType`.
-//! Often there's a bunch of `SomeType`s that is useable with an address, including special values
-//! like `address::primitive::Existence` which is simply used to check whether something exists at that address.
-//!
-//! In some cases, "address" and "value" are more or less the same thing.
-//! E.g., if you list your Airtable bases, you get the data about them, but then you can reuse it as an address.
-//!
 //! ## Location
 //!
 //! [`location::Location`] is the object you'll use the most, and it contains most of the important client API.
@@ -134,6 +120,20 @@
 //! # Ok(()) };
 //! ```
 //!
+//! ## Address
+//!
+//! A storage system is defined around the concept of [`address::Address`]. An address uniquely identifies
+//! a piece of content. A storage system can support several types as [Addresses][`address::Address`]: e.g.
+//! pointers to specific databases, tables, rows, cells, or even sub-values inside cells.
+//!
+//! If a system understands a particular address, it implements [traits][`address::traits`] like [`address::traits::AddressableRead`].
+//! `address::traits::AddressableRead<SomeType, SomeAddr>` means that `SomeAddr` can be used to read a value of `SomeType`.
+//! Often there's a bunch of `SomeType`s that is useable with an address, including special values
+//! like `address::primitive::Existence` which is simply used to check whether something exists at that address.
+//!
+//! In some cases, "address" and "value" are more or less the same thing.
+//! E.g., if you list your Airtable bases, you get the data about them, but then you can reuse it as an address.
+//!
 //! ## Wrappers
 //!
 //! The traits in this crate are designed to be easily composable without too much boilerplate. That allows
@@ -144,14 +144,14 @@
 //! Be aware that most of the things in this crate are hidden behind specific features.
 //!
 //! Basic stores:
-//! - [`stores::fs::FileSystemStore`] file system as a store
+//! - [`stores::fs::FileSystemStore`](stores::fs::FileSystemStore) file system as a store
 //!
 //! Wrappers:
 //! - [`stores::located::json::LocatedJsonStore`] -- use this over any `Location` to store JSON in it
 //! - [`wrappers::filter_addresses::FilterAddressesWrapperStore`] -- wrap this over a store to dynamically filter out addresses
 //!
 //! Cloud services:
-//! - [`stores::cloud::airtable::AirtableStore`] -- Airtable
+//! - [`stores::cloud::airtable::AirtableStore`](stores::cloud::airtable::AirtableStore) -- Airtable
 //!
 //! Memory:
 //! - [`stores::json::JsonValueStore`] `serde_json::Value` as a store
