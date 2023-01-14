@@ -45,13 +45,13 @@ mod test {
     };
 
     #[tokio::test]
-    async fn test() -> Result<(), FilterAddressesWrapperError<JsonValueStoreError>> {
+    async fn test() -> Result<(), anyhow::Error> {
         let val = json!({
             "wow": {"hello": "yes"},
             "another": {"seriously": {"throrougly": 7}, "basic": [1, 2, 3, {"hello": "_why"}, {"_why": "ya"}]},
             "_ignore": {"haha": {"_yes": 3}}
         });
-        let store = FilterAddressesWrapperStore::new(JsonValueStore::new(val), |s: JsonPath| {
+        let store = FilterAddressesWrapperStore::new(json_value_store(val)?, |s: JsonPath| {
             s.last()
                 .map(|s| !s.to_key().starts_with('_'))
                 .unwrap_or(true)

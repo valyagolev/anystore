@@ -16,6 +16,7 @@ use thiserror::Error;
 
 use crate::{
     address::{
+        primitive::Existence,
         traits::{
             AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
         },
@@ -218,3 +219,8 @@ impl<
         Ok(self.underlying.branch_or_leaf(addr).await?)
     }
 }
+
+// impl<S: Store, A: Address, S: AddressableRead<Existence, A>, K: Clone, F: Fn(K) -> bool> AddressableRead<Existence, A>
+//     for FilterAddressesWrapperStore<S, K, F>
+// {
+// }

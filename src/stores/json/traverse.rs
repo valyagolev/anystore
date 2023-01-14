@@ -35,7 +35,12 @@ pub fn get_mut_subvalue<'a>(
 
                     Ok(Some(&mut map[key]))
                 }
-                _ => return Err(format!("Incompatible value at key {next} of {cur}",).into()),
+                _ => {
+                    return Err(format!(
+                        "get_mut_subvalue: Incompatible value for key {next} of {cur}",
+                    )
+                    .into());
+                }
             }
         }
         JsonPathPart::Index(ix) => {
@@ -59,7 +64,12 @@ pub fn get_mut_subvalue<'a>(
 
                     Ok(Some(&mut arr[*ix]))
                 }
-                _ => return Err(format!("Incompatible value at key {next} of {cur}",).into()),
+                _ => {
+                    return Err(format!(
+                        "get_mut_subvalue: Incompatible value for inxex {next} of {cur}",
+                    )
+                    .into())
+                }
             }
         }
     }
@@ -100,7 +110,11 @@ pub fn get_subvalue<'a>(
 
                     Ok(Some(&map[key]))
                 }
-                _ => return Err(format!("Incompatible value at key {next} of {cur}",).into()),
+                _ => {
+                    return Err(
+                        format!("get_subvalue: Incompatible value for key {next} of {cur}",).into(),
+                    )
+                }
             }
         }
         JsonPathPart::Index(ix) => {
@@ -116,7 +130,12 @@ pub fn get_subvalue<'a>(
 
                     Ok(Some(&arr[*ix]))
                 }
-                _ => return Err(format!("Incompatible value at key {next} of {cur}",).into()),
+                _ => {
+                    return Err(format!(
+                        "get_subvalue: Incompatible value for index {next} of {cur}",
+                    )
+                    .into())
+                }
             }
         }
     }

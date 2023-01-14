@@ -21,3 +21,12 @@ pub trait AddressableList<
 
     fn list(&self, addr: &ListAddr) -> Self::ListOfAddressesStream;
 }
+
+pub trait AddressableInsert<
+    'a,
+    Value,
+    ListAddr: Address + SubAddress<Self::AddedAddress, Output = Self::ItemAddress>,
+>: AddressableList<'a, ListAddr>
+{
+    fn insert(&self, addr: &ListAddr, items: Vec<Value>) -> Self::ListOfAddressesStream;
+}

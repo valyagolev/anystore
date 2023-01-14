@@ -11,7 +11,8 @@ use crate::{
     address::{
         primitive::Existence,
         traits::{
-            AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
+            AddressableInsert, AddressableList, AddressableRead, AddressableTree, AddressableWrite,
+            BranchOrLeaf,
         },
         Address, Addressable, PathAddress, SubAddress,
     },
@@ -124,6 +125,14 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
         S: AddressableWrite<Value, Addr>,
     {
         self.store.write(&self.address, value).await
+    }
+
+    pub fn insert<Value>(&self, values: Vec<Value>) -> S::ListOfAddressesStream
+    where
+        S: AddressableInsert<'a, Value, Addr>,
+        Addr: SubAddress<S::AddedAddress, Output = S::ItemAddress>,
+    {
+        self.store.insert(&self.address, values)
     }
 
     /// Typically it's better to use `store.sub(address)`

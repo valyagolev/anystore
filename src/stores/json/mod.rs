@@ -2,13 +2,14 @@ use std::sync::Arc;
 
 use crate::{
     address::{
-        primitive::Existence,
+        primitive::{Existence, UniqueRootAddress},
         traits::{
             AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
         },
         Addressable, SubAddress,
     },
-    store::{Store, StoreResult},
+    store::{Store, StoreEx, StoreResult},
+    wrappers::filter_addresses::FilterAddressesWrapperError,
 };
 use derive_more::{Display, From};
 use futures::{stream, StreamExt};
@@ -22,181 +23,146 @@ pub(crate) mod traverse;
 pub use paths::*;
 use traverse::*;
 
-#[derive(From, Display, Debug, Error)]
-pub enum JsonValueStoreError {
-    Serde(serde_json::Error),
-    TaverseError(JsonTraverseError),
-    ParseError(JsonPathParseError),
-    Custom(String),
-}
+use super::{cell::MemoryCellStore, located::json::LocatedJsonStore};
 
-#[derive(Clone)]
-pub struct JsonValueStore {
-    value: Arc<RwLock<Value>>,
-}
+// #[derive(From, Display, Debug, Error)]
+// pub enum JsonValueStoreError {
+//     Serde(serde_json::Error),
+//     TaverseError(JsonTraverseError),
+//     ParseError(JsonPathParseError),
+//     Custom(String),
+// }
 
-impl JsonValueStore {
-    pub fn new(value: Value) -> Self {
-        JsonValueStore {
-            value: Arc::new(RwLock::new(value)),
-        }
-    }
-    pub fn try_destruct(mut self) -> Result<Value, Self> {
-        match Arc::try_unwrap(self.value) {
-            Ok(v) => Ok(v.into_inner()),
-            Err(this) => {
-                self.value = this;
-                Err(self)
-            }
-        }
-    }
-}
+// #[derive(Clone)]
+// pub struct JsonValueStore {
+//     value: Arc<RwLock<Value>>,
+// }
 
-impl Store for JsonValueStore {
-    type Error = JsonValueStoreError;
-    type RootAddress = JsonPath;
-}
+// impl JsonValueStore {
+//     pub fn new(value: Value) -> Self {
+//         JsonValueStore {
+//             value: Arc::new(RwLock::new(value)),
+//         }
+//     }
+//     pub fn try_destruct(mut self) -> Result<Value, Self> {
+//         match Arc::try_unwrap(self.value) {
+//             Ok(v) => Ok(v.into_inner()),
+//             Err(this) => {
+//                 self.value = this;
+//                 Err(self)
+//             }
+//         }
+//     }
+// }
 
-impl Addressable<JsonPath> for JsonValueStore {
-    type DefaultValue = Value;
-}
+// impl Store for JsonValueStore {
+//     type Error = JsonValueStoreError;
+//     type RootAddress = JsonPath;
+// }
 
-impl AddressableRead<Value, JsonPath> for JsonValueStore {
-    async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Value>, Self> {
-        let value = self.value.read().await;
+// impl Addressable<JsonPath> for JsonValueStore {
+//     type DefaultValue = Value;
+// }
 
-        return Ok(get_pathvalue(&value, &addr.0[..])?.cloned());
-    }
-}
+// impl AddressableRead<Value, JsonPath> for JsonValueStore {
+//     async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Value>, Self> {
+//         let value = self.value.read().await;
 
-impl AddressableWrite<Value, JsonPath> for JsonValueStore {
-    async fn write(
-        &self,
-        addr: &JsonPath,
-        value: &Option<Value>,
-    ) -> StoreResult<(), JsonValueStore> {
-        let mut cur = self.value.write().await;
-        let addr = &addr.0;
+//         return Ok(get_pathvalue(&value, &addr.0[..])?.cloned());
+//     }
+// }
 
-        return match value {
-            // Delete
-            None => {
-                let Some((last, path)) = addr.split_last() else {
-                    *cur = Value::Null;
-                    return Ok(());
-                };
+// impl AddressableWrite<Value, JsonPath> for JsonValueStore {
+//     async fn write(
+//         &self,
+//         addr: &JsonPath,
+//         value: &Option<Value>,
+//     ) -> StoreResult<(), JsonValueStore> {
+//         let mut cur = self.value.write().await;
+//         let addr = &addr.0;
 
-                let delete_from = get_mut_pathvalue(&mut cur, path, false)?;
+//         return match value {
+//             // Delete
+//             None => {
+//                 let Some((last, path)) = addr.split_last() else {
+//                     *cur = Value::Null;
+//                     return Ok(());
+//                 };
 
-                match delete_from {
-                    None => Ok(()),
-                    Some(Value::Null) => Ok(()),
+//                 let delete_from = get_mut_pathvalue(&mut cur, path, false)?;
 
-                    Some(delete_from) => match (last, delete_from) {
-                        (JsonPathPart::Key(key), Value::Object(obj)) => {
-                            obj.remove(key);
-                            Ok(())
-                        }
-                        (JsonPathPart::Index(ix), Value::Array(arr)) => {
-                            if arr.len() <= *ix {
-                            } else if arr.len() == *ix {
-                                arr.pop();
-                            } else {
-                                arr[*ix] = Value::Null;
-                            }
+//                 match delete_from {
+//                     None => Ok(()),
+//                     Some(Value::Null) => Ok(()),
 
-                            Ok(())
-                        }
-                        (_, value) => {
-                            Err(format!("Incompatible value at key {last}: {value}",).into())
-                        }
-                    },
-                }
-            }
-            // Set
-            Some(value) => {
-                let insert_at = get_mut_pathvalue(&mut cur, &addr[..], true)?.unwrap();
+//                     Some(delete_from) => match (last, delete_from) {
+//                         (JsonPathPart::Key(key), Value::Object(obj)) => {
+//                             obj.remove(key);
+//                             Ok(())
+//                         }
+//                         (JsonPathPart::Index(ix), Value::Array(arr)) => {
+//                             if arr.len() <= *ix {
+//                             } else if arr.len() == *ix {
+//                                 arr.pop();
+//                             } else {
+//                                 arr[*ix] = Value::Null;
+//                             }
 
-                *insert_at = value.clone();
+//                             Ok(())
+//                         }
+//                         (_, value) => {
+//                             Err(format!("Incompatible value at key {last}: {value}",).into())
+//                         }
+//                     },
+//                 }
+//             }
+//             // Set
+//             Some(value) => {
+//                 let insert_at = get_mut_pathvalue(&mut cur, &addr[..], true)?.unwrap();
 
-                Ok(())
-            }
-        };
-    }
-}
+//                 *insert_at = value.clone();
 
-impl AddressableRead<Existence, JsonPath> for JsonValueStore {
-    async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Existence>, Self> {
-        let value = self.value.read().await;
-        let val = get_pathvalue(&value, &addr.0[..])?;
-        Ok(val.map(|_| Default::default()))
-    }
-}
+//                 Ok(())
+//             }
+//         };
+//     }
+// }
 
-impl<'a> AddressableList<'a, JsonPath> for JsonValueStore {
-    type AddedAddress = JsonPathPart;
-
-    type ItemAddress = JsonPath;
-
-    fn list(&self, addr: &JsonPath) -> Self::ListOfAddressesStream {
-        let this = self.clone();
-        let addr = addr.clone();
-
-        stream::once(async move {
-            let value = this.value.read().await;
-
-            let val: StoreResult<_, JsonValueStore> =
-                try { get_pathvalue(&value, &addr.0[..])?.ok_or("Path doesn't exist".to_owned())? };
-
-            let vec = match val {
-                Ok(Value::Array(arr)) => (0..arr.len())
-                    .map(JsonPathPart::Index)
-                    .map(|i| Ok((i.clone(), addr.clone().sub(i))))
-                    .collect(),
-                Ok(Value::Object(obj)) => obj
-                    .keys()
-                    .map(|k| JsonPathPart::Key(k.to_owned()))
-                    .map(|i| Ok((i.clone(), addr.clone().sub(i))))
-                    .collect(),
-                Err(e) => vec![Err(e)],
-                _ => vec![Err(format!("Can't list: {val:?}").into())],
-            };
-
-            stream::iter(vec.into_iter())
-        })
-        .flatten()
-        .boxed_local()
-    }
-}
-
-impl<'a> AddressableTree<'a, JsonPath, JsonPath> for JsonValueStore {
-    async fn branch_or_leaf(
-        &self,
-        addr: JsonPath,
-    ) -> StoreResult<BranchOrLeaf<JsonPath, JsonPath>, Self> {
-        let value = self.value.read().await;
-        let val = get_pathvalue(&value, &addr.0[..])?.ok_or("Path doesn't exist".to_owned())?;
-
-        Ok(match val {
-            Value::Array(_) => BranchOrLeaf::Branch(addr),
-            Value::Object(_) => BranchOrLeaf::Branch(addr),
-
-            _ => BranchOrLeaf::Leaf(addr),
-        })
-    }
-}
+// impl AddressableRead<Existence, JsonPath> for JsonValueStore {
+//     async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Existence>, Self> {
+//         let value = self.value.read().await;
+//         let val = get_pathvalue(&value, &addr.0[..])?;
+//         Ok(val.map(|_| Default::default()))
+//     }
+// }
 
 // todo: how to make this automatic?
 // mb create a "wrapper error" struct...
 // ... or let a store handle this...
 impl From<paths::JsonPathParseError>
     for crate::wrappers::filter_addresses::FilterAddressesWrapperError<
-        crate::stores::json::JsonValueStoreError,
+        FilterAddressesWrapperError<anyhow::Error>,
     >
 {
     fn from(value: paths::JsonPathParseError) -> Self {
-        JsonValueStoreError::from(value).into()
+        FilterAddressesWrapperError::StoreError(FilterAddressesWrapperError::StoreError(
+            value.into(),
+        ))
     }
+}
+
+impl From<JsonPathParseError> for FilterAddressesWrapperError<anyhow::Error> {
+    fn from(value: JsonPathParseError) -> Self {
+        FilterAddressesWrapperError::StoreError(value.into())
+    }
+}
+
+pub fn json_value_store(
+    val: Value,
+) -> serde_json::Result<LocatedJsonStore<UniqueRootAddress, MemoryCellStore<String>>> {
+    let cell_store = MemoryCellStore::new(Some(serde_json::to_string(&val)?));
+
+    Ok(LocatedJsonStore::new(cell_store.root()))
 }
 
 #[cfg(test)]
@@ -206,23 +172,28 @@ mod test_tree {
 
     use serde_json::{json, Value};
 
+    use crate::stores::cell::MemoryCellStore;
+    use crate::stores::json::json_value_store;
+    use crate::stores::located::json::LocatedJsonStore;
     use crate::{store::StoreEx, wrappers::filter_addresses::FilterAddressesWrapperStore};
 
     use super::paths::*;
-    use super::JsonValueStore;
     use crate::address::primitive::UniqueRootAddress;
     use crate::address::SubAddress;
 
     #[tokio::test]
     pub async fn test_json_tree() -> Result<(), Box<dyn std::error::Error>> {
-        let base_store = JsonValueStore::new(json!({
+        let val = json!({
                 "wow": {"hello": "yes"},
                 "another": {"seriously": {"throrougly": 7}, "basic": [1,2,3,{"hello": "_why"},{"_why": "ya"}]},
                 "_ignore": {"haha": {"_yes": 3}}
-        }));
-        let _store = base_store.clone();
+        });
+
+        let cell_store = MemoryCellStore::new(Some(serde_json::to_string(&val)?));
+        let json_store = LocatedJsonStore::new(cell_store.root());
+
         let store =
-            FilterAddressesWrapperStore::new(base_store.clone(), |s: String| !s.starts_with('_'));
+            FilterAddressesWrapperStore::new(json_store.clone(), |s: String| !s.starts_with('_'));
         let root = store.root();
 
         let some = root.clone().sub(
@@ -263,20 +234,20 @@ mod test_tree {
         assert_eq!(some.get().await?, Some(json!("yes")));
 
         some.write(&Some(json!("no"))).await?;
-        println!("{:?}", base_store.value.read().await);
+        println!("{:?}", cell_store.root().getv().await);
         assert_eq!(true, some.exists().await?);
 
         some.write(&Some(Value::Null)).await?;
-        println!("{:?}", base_store.value.read().await);
+        println!("{:?}", cell_store.root().getv().await);
         assert_eq!(true, some.exists().await?);
 
         some.write(&None).await?;
-        println!("{:?}", base_store.value.read().await);
+        println!("{:?}", cell_store.root().getv().await);
         assert_eq!(false, some.exists().await?);
 
         println!(
             "list base {:?}",
-            base_store.root().list().try_collect::<Vec<_>>().await?
+            json_store.root().list().try_collect::<Vec<_>>().await?
         );
         println!("list {:?}", root.list().try_collect::<Vec<_>>().await?);
 

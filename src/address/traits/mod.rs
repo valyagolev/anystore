@@ -19,11 +19,3 @@ pub trait AddressableRead<Value, A: Address>: Addressable<A> {
 pub trait AddressableWrite<Value, A: Address>: Addressable<A> {
     async fn write(&self, addr: &A, value: &Option<Value>) -> StoreResult<(), Self>;
 }
-
-pub trait AddressableInsert<Value, A: Address>:
-    Addressable<A> + Addressable<Self::ItemAddress>
-{
-    type ItemAddress: Address;
-
-    async fn insert(&self, addr: &A, value: &Value) -> StoreResult<Self::ItemAddress, Self>;
-}
