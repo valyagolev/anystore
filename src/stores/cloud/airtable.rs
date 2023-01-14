@@ -353,41 +353,7 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
     type ItemAddress = AirtableRecord<V>;
 
     fn list(&self, addr: &AirtableTable<V>) -> Self::ListOfAddressesStream {
-        let addr = addr.clone();
-        let this = self.clone();
-
-        stream::once(async move {
-            let addr = addr.clone();
-            let addr2 = addr.clone();
-
-            let s = this
-                .get_paginated(
-                    &format!(
-                        "https://api.airtable.com/v0/{}/{}",
-                        addr.base
-                            .ok_or(AirtableStoreError::Custom(
-                                "Table address contains no base address".to_owned()
-                            ))?
-                            .id,
-                        addr.id
-                    ),
-                    "records",
-                    Default::default(),
-                )
-                .map(move |v| {
-                    let (id, value) = v?;
-                    let b = AirtableRecord {
-                        id,
-                        table: addr2.clone(),
-                        value: serde_json::from_value(value["fields"].clone())?,
-                    };
-                    Ok((b.clone(), b))
-                });
-
-            Ok::<_, AirtableStoreError>(s)
-        })
-        .try_flatten()
-        .boxed_local()
+        self.query(addr, FilterByFormula("".to_owned()))
     }
 }
 
@@ -428,7 +394,7 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
                     let b = AirtableRecord {
                         id,
                         table: addr2.clone(),
-                        value: serde_json::from_value(value)?,
+                        value: serde_json::from_value(value["fields"].clone())?,
                     };
                     Ok((b.clone(), b))
                 });
