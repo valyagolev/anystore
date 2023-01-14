@@ -1,10 +1,12 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, fmt::Formatter, marker::PhantomData, sync::Arc, time::Duration};
 
 use derive_more::{Display, From};
 
 use futures::{stream, Stream, StreamExt, TryStreamExt};
 use reqwest::Method;
+use serde::{de::DeserializeOwned, Serialize};
 use serde_json::Value;
+use std::fmt::Debug;
 use thiserror::Error;
 
 use crate::{
@@ -195,10 +197,12 @@ impl Address for AirtableBase {
     }
 }
 impl Addressable<AirtableBase> for AirtableStore {}
-impl SubAddress<AirtableTable> for AirtableBase {
-    type Output = AirtableTable;
+impl<V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq> SubAddress<AirtableTable<V>>
+    for AirtableBase
+{
+    type Output = AirtableTable<V>;
 
-    fn sub(self, mut rhs: AirtableTable) -> Self::Output {
+    fn sub(self, mut rhs: AirtableTable<V>) -> Self::Output {
         // TODO: not a good sign... how do we do it?
         match &rhs.base {
             Some(b) => assert_eq!(b, &self),
@@ -212,9 +216,9 @@ impl SubAddress<AirtableTable> for AirtableBase {
 }
 
 impl<'a> AddressableList<'a, AirtableBase> for AirtableStore {
-    type AddedAddress = AirtableTable;
+    type AddedAddress = AirtableTable<Value>;
 
-    type ItemAddress = AirtableTable;
+    type ItemAddress = AirtableTable<Value>;
 
     fn list(&self, addr: &AirtableBase) -> Self::ListOfAddressesStream {
         let addr = addr.clone();
@@ -230,6 +234,7 @@ impl<'a> AddressableList<'a, AirtableBase> for AirtableStore {
                 id,
                 base: Some(addr.clone()),
                 meta: serde_json::from_value(value)?,
+                phantom: PhantomData,
             };
             Ok((b.clone(), b))
         })
@@ -237,24 +242,52 @@ impl<'a> AddressableList<'a, AirtableBase> for AirtableStore {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct AirtableTable {
+pub struct AirtableTable<V> {
     pub id: String,
     pub base: Option<AirtableBase>,
     pub meta: Option<Value>,
+    phantom: PhantomData<V>,
 }
 
-impl AirtableTable {
+impl<V> AirtableTable<V> {
     pub fn by_id_or_name(id_or_name: &str) -> Self {
         AirtableTable {
             id: id_or_name.to_owned(),
             base: None,
             meta: None,
+            phantom: PhantomData,
         }
     }
 }
 
-impl Address for AirtableTable {
+impl<V> Clone for AirtableTable<V> {
+    fn clone(&self) -> Self {
+        AirtableTable {
+            id: self.id.to_owned(),
+            base: self.base.clone(),
+            meta: self.meta.clone(),
+            phantom: PhantomData,
+        }
+    }
+}
+impl<V> PartialEq for AirtableTable<V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+impl<V> Eq for AirtableTable<V> {}
+
+impl<V> Debug for AirtableTable<V> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AirtableTable")
+            .field("id", &self.id)
+            .field("base", &self.base)
+            .field("meta", &self.meta)
+            .finish()
+    }
+}
+
+impl<V: 'static> Address for AirtableTable<V> {
     fn own_name(&self) -> String {
         self.id.to_owned()
     }
@@ -269,27 +302,29 @@ impl Address for AirtableTable {
         vec![base_id, self.id.to_owned()]
     }
 }
-impl Addressable<AirtableTable> for AirtableStore {}
+impl<V: 'static> Addressable<AirtableTable<V>> for AirtableStore {}
 
 // TODO: id/value stuff is a bit of a boilerplate
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct AirtableRecord {
+pub struct AirtableRecord<V: Serialize + DeserializeOwned> {
     pub id: String,
-    pub table: AirtableTable,
-    pub value: Option<Value>,
+    pub table: AirtableTable<V>,
+    pub value: Option<V>,
 }
 
-impl SubAddress<AirtableRecord> for AirtableTable {
-    type Output = AirtableRecord;
+impl<V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq> SubAddress<AirtableRecord<V>>
+    for AirtableTable<V>
+{
+    type Output = AirtableRecord<V>;
 
-    fn sub(self, rhs: AirtableRecord) -> Self::Output {
+    fn sub(self, rhs: AirtableRecord<V>) -> Self::Output {
         assert!(self == rhs.table);
 
         rhs
     }
 }
 
-impl Address for AirtableRecord {
+impl<V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq> Address for AirtableRecord<V> {
     fn own_name(&self) -> String {
         self.id.to_owned()
     }
@@ -300,16 +335,20 @@ impl Address for AirtableRecord {
         v
     }
 }
-impl Addressable<AirtableRecord> for AirtableStore {
+impl<V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq> Addressable<AirtableRecord<V>>
+    for AirtableStore
+{
     type DefaultValue = Value;
 }
 
-impl<'a> AddressableList<'a, AirtableTable> for AirtableStore {
-    type AddedAddress = AirtableRecord;
+impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
+    AddressableList<'a, AirtableTable<V>> for AirtableStore
+{
+    type AddedAddress = AirtableRecord<V>;
 
-    type ItemAddress = AirtableRecord;
+    type ItemAddress = AirtableRecord<V>;
 
-    fn list(&self, addr: &AirtableTable) -> Self::ListOfAddressesStream {
+    fn list(&self, addr: &AirtableTable<V>) -> Self::ListOfAddressesStream {
         let addr = addr.clone();
         let this = self.clone();
 
@@ -351,8 +390,14 @@ impl<'a> AddressableList<'a, AirtableTable> for AirtableStore {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FilterByFormula(pub String);
 
-impl<'a> AddressableQuery<'a, FilterByFormula, AirtableTable> for AirtableStore {
-    fn query(&self, addr: &AirtableTable, query: FilterByFormula) -> Self::ListOfAddressesStream {
+impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
+    AddressableQuery<'a, FilterByFormula, AirtableTable<V>> for AirtableStore
+{
+    fn query(
+        &self,
+        addr: &AirtableTable<V>,
+        query: FilterByFormula,
+    ) -> Self::ListOfAddressesStream {
         let addr = addr.clone();
         let this = self.clone();
 
@@ -400,6 +445,7 @@ mod test_airtable {
         },
     };
     use futures::StreamExt;
+    use serde_json::Value;
 
     #[tokio::test]
     #[ignore]
@@ -455,7 +501,7 @@ mod test_airtable {
 
         let mut query = store
             .sub(AirtableBase::by_id("app46Mmalo62fN5Vq"))
-            .sub(AirtableTable::by_id_or_name("Entries"))
+            .sub(AirtableTable::<Value>::by_id_or_name("Entries"))
             .query(FilterByFormula("Find(\"RPC\", {title})".to_owned()));
 
         while let Some(v) = query.next().await {
