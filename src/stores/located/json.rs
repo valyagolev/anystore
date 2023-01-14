@@ -79,7 +79,7 @@ type LocatedJsonStoreError = anyhow::Error;
 ///
 ///     let l = json_there.path("sub.key")?;
 ///
-///     l.write(&Some(json!("wow"))).await?;
+///     l.set(&Some(json!("wow"))).await?;
 ///
 ///     assert_eq!(fileloc.get::<Existence>().await?, Some(Existence));
 ///
@@ -161,7 +161,7 @@ where
             serde_json::to_string(&value)
         }?;
 
-        loc.write(&Some(stored))
+        loc.set(&Some(stored))
             .await
             // .map_err(LocatedJsonStoreError::StoreError)
             ?;

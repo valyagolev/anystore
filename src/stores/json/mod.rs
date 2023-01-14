@@ -111,15 +111,15 @@ mod test_tree {
 
         assert_eq!(some.get().await?, Some(json!("yes")));
 
-        some.write(&Some(json!("no"))).await?;
+        some.set(&Some(json!("no"))).await?;
         println!("{:?}", cell_store.root().getv().await);
         assert_eq!(true, some.exists().await?);
 
-        some.write(&Some(Value::Null)).await?;
+        some.set(&Some(Value::Null)).await?;
         println!("{:?}", cell_store.root().getv().await);
         assert_eq!(true, some.exists().await?);
 
-        some.write(&None).await?;
+        some.set(&None).await?;
         println!("{:?}", cell_store.root().getv().await);
         assert_eq!(false, some.exists().await?);
 

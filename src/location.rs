@@ -43,7 +43,7 @@ impl<V, Addr: Address, S: Store + Addressable<Addr, DefaultValue = V>> Location<
     where
         S: Addressable<Addr, DefaultValue = V> + AddressableSet<V, Addr>,
     {
-        self.write(v).await
+        self.set(v).await
     }
 }
 
@@ -120,7 +120,7 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
     /// for this kind of location.
     ///
     /// `None` means that the value doesn't exist.
-    pub async fn write<Value>(&self, value: &Option<Value>) -> StoreResult<(), S>
+    pub async fn set<Value>(&self, value: &Option<Value>) -> StoreResult<(), S>
     where
         S: AddressableSet<Value, Addr>,
     {

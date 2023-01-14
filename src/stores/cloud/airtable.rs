@@ -691,7 +691,7 @@ mod test_airtable {
         let mut mp = obj.value.clone().unwrap();
         mp.insert("c".to_owned(), "test777".to_owned());
 
-        loc.clone().sub(obj.clone()).write(&Some(mp)).await?;
+        loc.clone().sub(obj.clone()).set(&Some(mp)).await?;
         let obj3 = loc.clone().sub(obj.clone()).getv().await?;
 
         println!("v3: {obj3:?}");
