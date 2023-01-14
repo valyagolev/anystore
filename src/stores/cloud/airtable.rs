@@ -501,7 +501,7 @@ mod test_airtable {
 
         let mut query = store
             .sub(AirtableBase::by_id("app46Mmalo62fN5Vq"))
-            .sub(AirtableTable::<Value>::by_id_or_name("Entries"))
+            .sub(AirtableTable::<Option<Value>>::by_id_or_name("Entries"))
             .query(FilterByFormula("Find(\"RPC\", {title})".to_owned()));
 
         while let Some(v) = query.next().await {
