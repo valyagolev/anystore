@@ -360,7 +360,7 @@ where
                     arr.extend(items);
 
                     Ok(ixes
-                        .map(|i| JsonPathPart::Index(i))
+                        .map(JsonPathPart::Index)
                         .map(move |i| (i.clone(), addr.clone().sub(i))))
                 })
                 .await??;

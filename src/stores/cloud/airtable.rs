@@ -399,7 +399,7 @@ mod test_airtable {
             AirtableBase, AirtableBasesRootAddr, AirtableStore, AirtableTable, FilterByFormula,
         },
     };
-    use futures::{future, StreamExt, TryStreamExt};
+    use futures::StreamExt;
 
     #[tokio::test]
     #[ignore]
@@ -422,8 +422,8 @@ mod test_airtable {
         // }))
         // .await;
 
-        println!("");
-        println!("");
+        println!();
+        println!();
         println!("Will test hierarchy...");
 
         let mut bases = store.sub(AirtableBasesRootAddr).list();
@@ -449,8 +449,8 @@ mod test_airtable {
             }
         }
 
-        println!("");
-        println!("");
+        println!();
+        println!();
         println!("Will query...");
 
         let mut query = store
