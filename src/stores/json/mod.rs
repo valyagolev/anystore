@@ -51,7 +51,7 @@ mod test_tree {
     use serde_json::{json, Value};
 
     use crate::stores::cell::MemoryCellStore;
-    use crate::stores::json::json_value_store;
+
     use crate::stores::located::json::LocatedJsonStore;
     use crate::{store::StoreEx, wrappers::filter_addresses::FilterAddressesWrapperStore};
 

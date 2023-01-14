@@ -41,7 +41,7 @@ mod test {
     use crate::{
         store::*,
         stores::json::{paths::JsonPath, *},
-        wrappers::filter_addresses::{FilterAddressesWrapperError, FilterAddressesWrapperStore},
+        wrappers::filter_addresses::FilterAddressesWrapperStore,
     };
 
     #[tokio::test]

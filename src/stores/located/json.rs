@@ -328,16 +328,6 @@ where
 #[cfg(test)]
 #[cfg(feature = "json")]
 mod test {
-    use std::collections::HashSet;
-
-    use futures::{StreamExt, TryStreamExt};
-    use serde_json::json;
-
-    use crate::{
-        store::*,
-        stores::json::{paths::JsonPath, *},
-        wrappers::filter_addresses::{FilterAddressesWrapperError, FilterAddressesWrapperStore},
-    };
 
     #[tokio::test]
     async fn test() -> Result<(), anyhow::Error> {
