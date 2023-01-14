@@ -5,13 +5,13 @@ use derive_more::{Display, From};
 use futures::{stream, Stream, StreamExt, TryStreamExt};
 use reqwest::Method;
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::Value;
+use serde_json::{from_value, json, Value};
 use std::fmt::Debug;
 use thiserror::Error;
 
 use crate::{
     address::{
-        traits::{AddressableList, AddressableQuery},
+        traits::{AddressableInsert, AddressableList, AddressableQuery},
         Address, Addressable, SubAddress,
     },
     store::Store,
@@ -39,7 +39,10 @@ pub struct AirtableStore {
 
 impl AirtableStore {
     pub fn new(token: &str) -> Result<Self, AirtableStoreError> {
-        let headers = (&HashMap::from([("Authorization".to_owned(), format!("Bearer {token}"))]))
+        let headers = (&HashMap::from([
+            ("Authorization".to_owned(), format!("Bearer {token}")),
+            ("Content-Type".to_owned(), "application/json".to_owned()),
+        ]))
             .try_into()
             .map_err(|_| "invalid token")?;
 
@@ -51,21 +54,22 @@ impl AirtableStore {
         })
     }
 
-    async fn get_json(
+    async fn request(
         &self,
+        method: Method,
         url: &str,
         query: HashMap<String, String>,
+        body: Option<Value>,
     ) -> Result<Value, AirtableStoreError> {
         self.ratelimiter.ask().await;
 
-        let val = self
-            .http_client
-            .request(Method::GET, url)
-            .query(&query)
-            .send()
-            .await?
-            .text()
-            .await?;
+        let mut req = self.http_client.request(method, url).query(&query);
+
+        if let Some(b) = body {
+            req = req.body(serde_json::to_string(&b)?)
+        }
+
+        let val = req.send().await?.text().await?;
 
         Ok(serde_json::from_str(&val)?)
     }
@@ -95,7 +99,7 @@ impl AirtableStore {
                 let mut paged_q = query.clone();
                 paged_q.insert("offset".to_owned(), next_offset);
 
-                let resp = this.get_json(&url, paged_q).await?;
+                let resp = this.request(Method::GET, &url, paged_q, None).await?;
 
                 let bases = resp
                     .get(&object_key)
@@ -436,15 +440,88 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
     }
 }
 
+impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
+    AddressableInsert<'a, V, AirtableTable<V>> for AirtableStore
+{
+    fn insert(&self, addr: &AirtableTable<V>, items: Vec<V>) -> Self::ListOfAddressesStream {
+        let pages = items.chunks(10).map(|c| c.to_vec()).collect::<Vec<_>>();
+        let this = self.clone();
+        let addr = addr.clone();
+
+        stream::iter(pages)
+            .then(move |page| {
+                let addr = addr.clone();
+                let this = this.clone();
+
+                async move {
+                    let records = page
+                        .iter()
+                        .map(|v| {
+                            let fields = serde_json::to_value(v)?;
+                            Ok(json!({ "fields": fields }))
+                        })
+                        .collect::<Result<Vec<_>, AirtableStoreError>>()?;
+
+                    let data = json!({ "records": records });
+
+                    let url = format!(
+                        "https://api.airtable.com/v0/{}/{}",
+                        addr.base
+                            .clone()
+                            .ok_or(AirtableStoreError::Custom(
+                                "Table address contains no base address".to_owned()
+                            ))?
+                            .id,
+                        addr.id
+                    );
+
+                    let val = this
+                        .request(Method::POST, &url, Default::default(), Some(data))
+                        .await?;
+
+                    // println!("val: {val:?}");
+                    // println!("data: {}", serde_json::to_string_pretty(&data)?);
+
+                    let records = val
+                        .get("records")
+                        .ok_or("no records field")?
+                        .as_array()
+                        .ok_or(AirtableStoreError::Custom(format!(
+                            "Airtable response does not contain records: {val:?}",
+                        )))?
+                        .iter()
+                        .map(move |v| {
+                            Ok::<_, AirtableStoreError>(AirtableRecord {
+                                id: v["id"]
+                                    .as_str()
+                                    .ok_or("Airtable record does not have an id")?
+                                    .to_owned(),
+                                table: addr.clone(),
+                                value: Some(serde_json::from_value::<V>(v["fields"].clone())?),
+                            })
+                        })
+                        .collect::<Vec<_>>();
+
+                    Ok::<_, AirtableStoreError>(stream::iter(records))
+                }
+            })
+            .try_flatten()
+            .map_ok(|r| (r.clone(), r))
+            .boxed_local()
+    }
+}
+
 #[cfg(test)]
 mod test_airtable {
+    use std::collections::HashMap;
+
     use crate::{
         store::StoreEx,
         stores::cloud::airtable::{
             AirtableBase, AirtableBasesRootAddr, AirtableStore, AirtableTable, FilterByFormula,
         },
     };
-    use futures::StreamExt;
+    use futures::{StreamExt, TryStreamExt};
     use serde_json::Value;
 
     #[tokio::test]
@@ -508,6 +585,34 @@ mod test_airtable {
             let (v, _) = v?;
             println!("    {:?}", v.value.unwrap());
         }
+
+        let loc = store
+            .sub(AirtableBase::by_id("appkdGdMEeflhZSr2"))
+            .sub(AirtableTable::<HashMap<String, String>>::by_id_or_name(
+                "Test",
+            ));
+
+        println!();
+        println!();
+        println!("Will insert...");
+
+        let res = loc
+            .insert(vec![
+                HashMap::from([("a".to_owned(), "b".to_owned())]),
+                HashMap::from([
+                    ("a".to_owned(), "b2".to_owned()),
+                    ("c".to_owned(), "d2".to_owned()),
+                ]),
+                HashMap::from([
+                    ("a".to_owned(), "u2".to_owned()),
+                    ("c".to_owned(), "d2".to_owned()),
+                    ("e".to_owned(), "f".to_owned()),
+                ]),
+            ])
+            .try_collect::<Vec<_>>()
+            .await?;
+
+        println!("res: {:?}", res);
 
         Ok(())
         // Err(AirtableStoreError::Custom("lol".to_owned()))?
