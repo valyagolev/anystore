@@ -88,3 +88,6 @@
     # reqwest-retry      = "0.1"
     # reqwest-tracing    = { version = "0.2.1", features = ["opentelemetry_0_17"] }
     # schemars           = { version = "0.8", features = ["chrono", "uuid"] }
+
+[build-dependencies]
+    rustc_version = "0.4.0"
