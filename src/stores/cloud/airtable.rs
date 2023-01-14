@@ -5,7 +5,7 @@ use derive_more::{Display, From};
 use futures::{stream, Stream, StreamExt, TryStreamExt};
 use reqwest::Method;
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{from_value, json, Value};
+use serde_json::{json, Value};
 use std::fmt::Debug;
 use thiserror::Error;
 
@@ -488,7 +488,7 @@ impl<
             Some(value) => {
                 let body = json!({ "fields": value });
 
-                let resp = self
+                let _resp = self
                     .request(Method::PUT, record_url, Default::default(), Some(body))
                     .await?;
             }
@@ -674,11 +674,11 @@ mod test_airtable {
             .try_collect::<Vec<_>>()
             .await?;
 
-        println!("insert: {:?}", res);
+        println!("insert: {res:?}");
 
         let res = loc.list().try_collect::<Vec<_>>().await?;
 
-        println!("inserted: {:?}", res);
+        println!("inserted: {res:?}");
 
         let obj = res[0].0.clone();
         let obj2 = loc.clone().sub(obj.clone()).getv().await?;
