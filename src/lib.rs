@@ -154,7 +154,8 @@
 //! - [`stores::cloud::airtable::AirtableStore`](stores::cloud::airtable::AirtableStore) -- Airtable
 //!
 //! Memory:
-//! - [`stores::json::JsonValueStore`] `serde_json::Value` as a store
+//! - [`stores::cell::MemoryCellStore`] arbitrary memory cell as a readable/writable location (use it with wrappers)
+//! - [`stores::json::json_value_store`] `serde_json::Value` as a store (simply a [`MemoryCellStore`](stores::cell::MemoryCellStore) wrapped in [`LocatedJsonStore`](stores::located::json::LocatedJsonStore))
 //! - [`stores::indexed_vec::IndexedVecStore`] Vector indexed by Id derived from the value
 //!
 pub mod store;
