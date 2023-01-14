@@ -177,7 +177,7 @@ pub struct AirtableBase {
 }
 
 impl AirtableBase {
-    fn by_id(id: &str) -> Self {
+    pub fn by_id(id: &str) -> Self {
         AirtableBase {
             id: id.to_owned(),
             meta: None,
@@ -245,7 +245,7 @@ pub struct AirtableTable {
 }
 
 impl AirtableTable {
-    fn by_id_or_name(id_or_name: &str) -> Self {
+    pub fn by_id_or_name(id_or_name: &str) -> Self {
         AirtableTable {
             id: id_or_name.to_owned(),
             base: None,
@@ -349,7 +349,7 @@ impl<'a> AddressableList<'a, AirtableTable> for AirtableStore {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct FilterByFormula(pub String);
+pub struct FilterByFormula(pub String);
 
 impl<'a> AddressableQuery<'a, FilterByFormula, AirtableTable> for AirtableStore {
     fn query(&self, addr: &AirtableTable, query: FilterByFormula) -> Self::ListOfAddressesStream {
