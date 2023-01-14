@@ -9,7 +9,8 @@ use crate::{
     address::{
         primitive::Existence,
         traits::{
-            AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
+            AddressableInsert, AddressableList, AddressableRead, AddressableTree, AddressableWrite,
+            BranchOrLeaf,
         },
         Address, Addressable, SubAddress,
     },
@@ -325,12 +326,89 @@ where
     }
 }
 
+impl<'a, A: Address, S: 'a + AddressableRead<String, A> + AddressableWrite<String, A>>
+    AddressableInsert<'a, Value, JsonPath> for LocatedJsonStore<A, S>
+where
+    S::Error: std::error::Error,
+{
+    fn insert(&self, addr: &JsonPath, items: Vec<Value>) -> Self::ListOfAddressesStream {
+        let addr = addr.clone();
+        let this = self.clone();
+
+        stream::once(async move {
+            let addr = addr.clone();
+            let path = addr.0.clone();
+            let paths = this
+                .change_value(move |cur| {
+                    let insert_at = get_mut_pathvalue(cur, &path[..], true)?.unwrap();
+
+                    if insert_at.is_null() {
+                        *insert_at = Value::Array(vec![]);
+                    }
+
+                    let arr = match insert_at {
+                        Value::Array(at) => at,
+                        _ => {
+                            return Err::<_, Self::Error>(anyhow!(
+                                "Can't insert into non-array value"
+                            ))
+                        }
+                    };
+
+                    let ixes = arr.len()..arr.len() + items.len();
+
+                    arr.extend(items);
+
+                    Ok(ixes
+                        .map(|i| JsonPathPart::Index(i))
+                        .map(move |i| (i.clone(), addr.clone().sub(i))))
+                })
+                .await??;
+
+            Ok::<_, Self::Error>(stream::iter(paths.map(Ok)))
+        })
+        .try_flatten()
+        .boxed_local()
+    }
+}
+
 #[cfg(test)]
 #[cfg(feature = "json")]
 mod test {
+    use serde_json::json;
+
+    use crate::{store::StoreEx, stores::json::json_value_store};
+    use futures::TryStreamExt;
 
     #[tokio::test]
     async fn test() -> Result<(), anyhow::Error> {
+        let root = json_value_store(json!({
+            "test": {"a": 2},
+            "list": [{"a":8}, {"b":2}, {"a": 3}]
+        }))?
+        .root();
+
+        let vc: Vec<_> = root
+            .clone()
+            .path("list")?
+            .insert(vec![json!({"a": 1}), json!({"b": 2}), json!({"a": 3})])
+            .try_collect()
+            .await?;
+
+        assert_eq!(vc.len(), 3);
+        assert_eq!(vc[0].0.to_string(), "[3]");
+        assert_eq!(vc[1].1.to_string(), "list[4]");
+
+        let vc: Vec<_> = root
+            .path("test.deeper")?
+            .insert(vec![json!({"a": 1}), json!({"b": 2})])
+            .try_collect()
+            .await?;
+
+        assert_eq!(vc.len(), 2);
+        assert_eq!(vc[0].0.to_string(), "[0]");
+        assert_eq!(vc[1].1.to_string(), "test.deeper[1]");
+
         Ok(())
     }
 }
