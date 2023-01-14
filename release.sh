@@ -4,6 +4,7 @@ VERSION=$(cargo metadata --format-version 1 | jq ".packages | map(select( .name 
 
 git tag -a v$VERSION -m "Release $VERSION"
 git push origin v$VERSION
+git push
 
 cargo publish --dry-run
 cargo publish
