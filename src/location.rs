@@ -127,6 +127,10 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
         self.store.write(&self.address, value).await
     }
 
+    /// Inserts a list, returning the addresses of the items.
+    ///
+    /// Typically you want to use `.try_collect::<Vec<_>>().await?` on the returned
+    /// value, to make sure it's all have been processed.
     pub fn insert<Value>(&self, values: Vec<Value>) -> S::ListOfAddressesStream
     where
         S: AddressableInsert<'a, Value, Addr>,
