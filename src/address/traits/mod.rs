@@ -13,7 +13,7 @@ pub use list::*;
 pub use tree::*;
 
 pub trait AddressableGet<Value, A: Address>: Addressable<A> {
-    async fn read(&self, addr: &A) -> StoreResult<Option<Value>, Self>;
+    async fn addr_get(&self, addr: &A) -> StoreResult<Option<Value>, Self>;
 }
 
 pub trait AddressableSet<Value, A: Address>: Addressable<A> {

@@ -73,7 +73,7 @@ impl<
         F: Fn(&V) -> IdType,
     > AddressableGet<V, Id<IdType>> for Arc<IndexedVecStore<V, IdType, F>>
 {
-    async fn read(&self, addr: &Id<IdType>) -> crate::store::StoreResult<Option<V>, Self> {
+    async fn addr_get(&self, addr: &Id<IdType>) -> crate::store::StoreResult<Option<V>, Self> {
         Ok(self
             .vec
             .read()

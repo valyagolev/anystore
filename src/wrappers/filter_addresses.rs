@@ -144,11 +144,11 @@ where
     S::RootAddress: Into<K>,
     A: Into<K>,
 {
-    async fn read(&self, addr: &A) -> StoreResult<Option<V>, Self> {
+    async fn addr_get(&self, addr: &A) -> StoreResult<Option<V>, Self> {
         if self.should_ignore_addr(addr) {
             Ok(None)
         } else {
-            Ok(self.underlying.read(addr).await?)
+            Ok(self.underlying.addr_get(addr).await?)
         }
     }
 }

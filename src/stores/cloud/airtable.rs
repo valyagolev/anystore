@@ -425,7 +425,10 @@ impl<
         Any: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq,
     > AddressableGet<V, AirtableRecord<Any>> for AirtableStore
 {
-    async fn read(&self, addr: &AirtableRecord<Any>) -> crate::store::StoreResult<Option<V>, Self> {
+    async fn addr_get(
+        &self,
+        addr: &AirtableRecord<Any>,
+    ) -> crate::store::StoreResult<Option<V>, Self> {
         let resp = self
             .request(
                 Method::GET,

@@ -111,7 +111,7 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
     where
         S: AddressableGet<Value, Addr>,
     {
-        self.store.read(&self.address).await
+        self.store.addr_get(&self.address).await
     }
 
     /// Write a Value of a particular type to the store, if the store supports that.

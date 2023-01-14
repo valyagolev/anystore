@@ -184,7 +184,7 @@ impl<A: Address, S: AddressableGet<String, A>> AddressableGet<Value, JsonPath>
 where
     <S as Store>::Error: std::error::Error,
 {
-    async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Value>, Self> {
+    async fn addr_get(&self, addr: &JsonPath) -> StoreResult<Option<Value>, Self> {
         let (_, value) = self.lock_read_value().await?;
 
         return Ok(get_pathvalue(&value, &addr.0[..])?
@@ -257,9 +257,10 @@ impl<A: Address, S: AddressableGet<String, A>> AddressableGet<Existence, JsonPat
 where
     <S as Store>::Error: std::error::Error,
 {
-    async fn read(&self, addr: &JsonPath) -> StoreResult<Option<Existence>, Self> {
+    async fn addr_get(&self, addr: &JsonPath) -> StoreResult<Option<Existence>, Self> {
         let v: Option<Value> =
-            <LocatedJsonStore<A, S> as AddressableGet<Value, JsonPath>>::read(self, addr).await?;
+            <LocatedJsonStore<A, S> as AddressableGet<Value, JsonPath>>::addr_get(self, addr)
+                .await?;
 
         Ok(v.map(|_| Existence))
     }

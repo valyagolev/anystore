@@ -37,7 +37,7 @@ impl<V: Clone> Addressable<UniqueRootAddress> for MemoryCellStore<V> {
 }
 
 impl<V: Clone> AddressableGet<V, UniqueRootAddress> for MemoryCellStore<V> {
-    async fn read(&self, _address: &UniqueRootAddress) -> Result<Option<V>, Self::Error> {
+    async fn addr_get(&self, _address: &UniqueRootAddress) -> Result<Option<V>, Self::Error> {
         let value = self.value.read().await.clone();
         Ok(value)
     }
