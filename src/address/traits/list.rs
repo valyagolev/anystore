@@ -34,3 +34,17 @@ pub trait AddressableInsert<
     /// value, to make sure it's all have been processed.
     fn insert(&self, addr: &ListAddr, items: Vec<Value>) -> Self::ListOfAddressesStream;
 }
+
+pub trait AddressableQuery<
+    'a,
+    Query,
+    ListAddr: Address + SubAddress<Self::AddedAddress, Output = Self::ItemAddress>,
+>: AddressableList<'a, ListAddr>
+{
+    /// Queries a list. Every store can define its own queries.
+    ///
+    /// Typically this trait should be implemented only if this is somehow
+    /// optimized. If this is going to perform a full listing with a client-side filter,
+    /// it's better not to implement this trait, but use wrappers.
+    fn query(&self, addr: &ListAddr, query: Query) -> Self::ListOfAddressesStream;
+}

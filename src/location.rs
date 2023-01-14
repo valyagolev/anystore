@@ -11,8 +11,8 @@ use crate::{
     address::{
         primitive::Existence,
         traits::{
-            AddressableInsert, AddressableList, AddressableRead, AddressableTree, AddressableWrite,
-            BranchOrLeaf,
+            AddressableInsert, AddressableList, AddressableQuery, AddressableRead, AddressableTree,
+            AddressableWrite, BranchOrLeaf,
         },
         Address, Addressable, PathAddress, SubAddress,
     },
@@ -133,6 +133,14 @@ impl<'a, Addr: Address, S: 'a + Store + Addressable<Addr>> Location<Addr, S> {
         Addr: SubAddress<S::AddedAddress, Output = S::ItemAddress>,
     {
         self.store.insert(&self.address, values)
+    }
+
+    pub fn query<Query>(&self, query: Query) -> S::ListOfAddressesStream
+    where
+        Addr: SubAddress<S::AddedAddress, Output = S::ItemAddress>,
+        S: AddressableQuery<'a, Query, Addr>,
+    {
+        self.store.query(&self.address, query)
     }
 
     /// Typically it's better to use `store.sub(address)`
