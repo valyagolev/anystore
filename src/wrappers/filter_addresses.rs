@@ -17,8 +17,7 @@ use thiserror::Error;
 use crate::{
     address::{
         traits::{
-            tree::{AddressableTree, BranchOrLeaf},
-            AddressableList, AddressableRead, AddressableWrite,
+            AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
         },
         Address, Addressable, SubAddress,
     },

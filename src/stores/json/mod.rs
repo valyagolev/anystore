@@ -4,8 +4,7 @@ use crate::{
     address::{
         primitive::Existence,
         traits::{
-            tree::{AddressableTree, BranchOrLeaf},
-            AddressableList, AddressableRead, AddressableWrite,
+            AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
         },
         Addressable, SubAddress,
     },

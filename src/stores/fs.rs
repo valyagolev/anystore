@@ -15,8 +15,7 @@ use crate::{
     address::{
         primitive::Existence,
         traits::{
-            tree::{AddressableTree, BranchOrLeaf},
-            AddressableList, AddressableRead, AddressableWrite,
+            AddressableList, AddressableRead, AddressableTree, AddressableWrite, BranchOrLeaf,
         },
         Address, Addressable, PathAddress, SubAddress,
     },
