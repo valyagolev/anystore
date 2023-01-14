@@ -342,7 +342,7 @@ impl<V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq> Address for
 impl<V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq> Addressable<AirtableRecord<V>>
     for AirtableStore
 {
-    type DefaultValue = Value;
+    type DefaultValue = V;
 }
 
 impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
@@ -379,7 +379,7 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
                     let b = AirtableRecord {
                         id,
                         table: addr2.clone(),
-                        value: serde_json::from_value(value)?,
+                        value: serde_json::from_value(value["fields"].clone())?,
                     };
                     Ok((b.clone(), b))
                 });
@@ -612,7 +612,15 @@ mod test_airtable {
             .try_collect::<Vec<_>>()
             .await?;
 
-        println!("res: {:?}", res);
+        println!("insert: {:?}", res);
+
+        let res = loc.list().try_collect::<Vec<_>>().await?;
+
+        println!("inserted: {:?}", res);
+
+        // let obj = loc.sub(res[0].0).getv().await?;
+
+        // println!("v: {:?}", res);
 
         Ok(())
         // Err(AirtableStoreError::Custom("lol".to_owned()))?
