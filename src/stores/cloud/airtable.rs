@@ -175,9 +175,6 @@ impl<'a> AddressableList<'a, AirtableBasesRootAddr> for AirtableStore {
 
     type ItemAddress = AirtableBase;
 
-    type ListOfAddressesStream =
-        BoxStream<'a, Result<(Self::ItemAddress, Self::AddedAddress), Self::Error>>;
-
     fn list(&self, _addr: &AirtableBasesRootAddr) -> Self::ListOfAddressesStream {
         self.get_paginated(
             "https://api.airtable.com/v0/meta/bases",
@@ -365,12 +362,15 @@ impl<V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq> Addressable
     type DefaultValue = V;
 }
 
-impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
+impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq + Send>
     AddressableList<'a, AirtableTable<V>> for AirtableStore
 {
     type AddedAddress = AirtableRecord<V>;
 
     type ItemAddress = AirtableRecord<V>;
+
+    type ListOfAddressesStream =
+        BoxStream<'a, Result<(AirtableRecord<V>, AirtableRecord<V>), Self::Error>>;
 
     fn list(&self, addr: &AirtableTable<V>) -> Self::ListOfAddressesStream {
         self.query(addr, FilterByFormula("".to_owned()))
@@ -380,7 +380,7 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FilterByFormula(pub String);
 
-impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
+impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq + Send>
     AddressableQuery<'a, FilterByFormula, AirtableTable<V>> for AirtableStore
 {
     fn query(
@@ -422,7 +422,7 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
             Ok::<_, AirtableStoreError>(s)
         })
         .try_flatten()
-        .boxed_local()
+        .boxed()
     }
 }
 
