@@ -2,7 +2,10 @@ use std::{collections::HashMap, fmt::Formatter, marker::PhantomData, sync::Arc, 
 
 use derive_more::{Display, From};
 
-use futures::{stream, Stream, StreamExt, TryStreamExt};
+use futures::{
+    stream::{self, BoxStream},
+    Stream, StreamExt, TryStreamExt,
+};
 use reqwest::Method;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
@@ -172,6 +175,9 @@ impl<'a> AddressableList<'a, AirtableBasesRootAddr> for AirtableStore {
 
     type ItemAddress = AirtableBase;
 
+    type ListOfAddressesStream =
+        BoxStream<'a, Result<(Self::ItemAddress, Self::AddedAddress), Self::Error>>;
+
     fn list(&self, _addr: &AirtableBasesRootAddr) -> Self::ListOfAddressesStream {
         self.get_paginated(
             "https://api.airtable.com/v0/meta/bases",
@@ -186,7 +192,7 @@ impl<'a> AddressableList<'a, AirtableBasesRootAddr> for AirtableStore {
             };
             Ok((b.clone(), b))
         })
-        .boxed_local()
+        .boxed()
     }
 }
 
@@ -505,7 +511,7 @@ impl<
     }
 }
 
-impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
+impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq + Send>
     AddressableInsert<'a, V, AirtableTable<V>> for AirtableStore
 {
     fn insert(&self, addr: &AirtableTable<V>, items: Vec<V>) -> Self::ListOfAddressesStream {
@@ -572,7 +578,7 @@ impl<'a, V: 'static + Serialize + DeserializeOwned + Clone + Debug + Eq>
             })
             .try_flatten()
             .map_ok(|r| (r.clone(), r))
-            .boxed_local()
+            .boxed()
     }
 }
 
