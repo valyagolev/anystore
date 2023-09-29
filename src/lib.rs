@@ -5,7 +5,7 @@
 #![feature(try_blocks)]
 // #![feature(return_position_impl_trait_in_trait)]
 #![feature(error_generic_member_access)]
-#![feature(provide_any)]
+// #![feature(provide_any)]
 #![feature(doc_cfg)]
 #![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))]
 
